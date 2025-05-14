@@ -1,0 +1,14 @@
+{
+  "Elasticsearch": {
+    "Host": [ "http://127.0.0.1:9200" ],
+    "UserName": "elastic",
+    "PassWord": "123456"
+  },
+  "Ollama": {
+    "Url": "http://localhost:11434",
+    "Model": "bge-m3:latest"
+  },
+  "LLmModel": "qwen2.5:7b",
+  "PromptTemplate": "{0}\n\r生成总结",
+  "ChatTemplate": "输入：{0}\n\r请回答"
+}

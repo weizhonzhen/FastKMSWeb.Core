@@ -1,0 +1,141 @@
+﻿@page "/index"
+@page "/"
+@inject IJSRuntime js
+@inject VectorService vectorService
+@inject ImpService impService
+@inject KmsService kmsService
+<section class="content">
+    <div class="form-inline">
+        <div class="form-group">
+            <div class="form-group">
+                <button @onclick="AddAsync" class="btn btn-primary">增加知识库</button>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:10px;" class="box-body table-responsive"> 
+        <table id="kmsTable" class="table table-bordered TableList">
+            <thead style="background-color:#cacaca;">
+                <tr>
+                    <td align="center" width="15%">名称</td>
+                    <td align="center" width="10%">时间</td>
+                    <td align="center" width="35%">备注</td>
+                    <td align="center" width="10%">操作</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in pageModel.PageResult.List)
+                {
+                    <tr>
+                        <td align="center" width="15%">@item.GetValue("Name")</td>
+                        <td align="center" width="10%">@item.GetValue("DateTime")</td>
+                        <td align="center" width="35%">@item.GetValue("Remark")</td>
+                        <td align="center" width="10%">
+                            <button class="btn btn-primary btn-sm" @onclick="()=>DeleteAsync(item)">删除</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <Page @bind-PageModel="pageModel" @bind-PageModel:event="pageModelChanged" PageEvent="()=>PageEvent(pageModel)" />
+    </div>
+</section>
+<div style="display:none; overflow:hidden;" id="AddKms" >
+    <AddKms/>
+</div>
+
+@code {
+    private IBrowserFile file { get; set; }
+    private KmsPageModel pageModel { get; set; } = new KmsPageModel();
+
+
+    protected override void OnInitialized()
+    {
+        pageModel.PageResult = kmsService.GetKmsPage(pageModel.PageId, pageModel.PageSize);
+    }
+
+    private void PageEvent(KmsPageModel pageModel)
+    {
+        pageModel.PageResult = kmsService.GetKmsPage(pageModel.PageId, pageModel.PageSize);
+    }
+
+    private async Task DeleteAsync(Dictionary<string, object> dic)
+    {
+        await js.InvokeVoidAsync("FnLoading");
+        var data = vectorService.GetPage(dic.GetValue("VectorIndex").ToStr(),1 , 10);
+
+        if (vectorService.DeleteVector(dic.GetValue("VectorIndex").ToStr(), dic.GetValue("Index").ToStr()).IsSuccess)
+        {
+            await js.InvokeVoidAsync("FnMsg", new object[] { "删除成功" });
+            pageModel.PageResult = kmsService.GetKmsPage(pageModel.PageId, pageModel.PageSize);
+        }
+        else
+            await js.InvokeVoidAsync("FnMsg", new object[] { "删除失败" });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await js.InvokeVoidAsync("FnLoad");
+    }
+
+    private async void AddAsync()
+    {
+        await js.InvokeVoidAsync("FnAdd", new object[] { "增加知识库" });
+    }
+}
+
+<script>
+    $(function () {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    });
+
+    function FnLoad()
+    {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    }
+
+    function PageNum(id) {
+        $(".pagination li a").each(function () {
+            if ($(this).attr("aria-label") == undefined)
+                return;
+            if ($(this).is(id))
+                $(this).parent().addClass("active");
+            else
+                $(this).parent().removeClass("active");
+        });
+    }
+
+    function FnMsg(msg)
+    {
+        layer.closeAll('loading')
+        layer.msg(msg);
+    }
+
+    function FnReLoad()
+    {
+        window.location.reload();
+    }
+
+    function FnLoading()
+    {
+        layer.load(2);
+    }
+
+    function FnAdd(title)
+    {
+        layer.open({
+            type: 1,
+            area: ['650px', '330px'],
+            fixed: true, maxmin: false,
+            content:  $('#AddKms'),
+            title: "编辑 - " + title
+        });
+    }
+
+    function FnReload()
+    {
+        parent.layer.closeAll('iframe');
+        window.location.reload();
+    }
+</script>

@@ -1,0 +1,13 @@
+﻿@using FastKMSWeb.Core.Shared
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>404</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p><a href="/">重先加载</a></p>
+        </LayoutView>
+    </NotFound>
+</Router>

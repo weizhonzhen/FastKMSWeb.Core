@@ -1,0 +1,156 @@
+﻿@page "/chat"
+@inject IJSRuntime js
+@inject ChatService chatService
+@inject IMemoryCache cache
+<div class="form-inline">
+    <div class="form-group">
+        <div class="form-group">
+            <button @onclick="ChatAsync" class="btn btn-primary">对话</button>
+        </div>
+    </div>
+</div>
+<section class="content">
+    <div style="margin-top:10px;" class="box-body table-responsive"> 
+        <table id="kmsTable" class="table table-bordered TableList">
+            <thead style="background-color:#cacaca;">
+                <tr>
+                    <td align="center" width="40%">对话名称</td>
+                    <td align="center" width="15%">对话次数</td>
+                    <td align="center" width="15%">对话时间</td>
+                    <td align="center" width="15%">操作</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in pageModel.PageResult.List)
+                {
+                    <tr>
+                        <td align="center" width="40%">@item.GetValue("Name")</td>
+                        <td align="center" width="15%">@item.GetValue("Total").ToStr().ToInt(0)</td>
+                        <td align="center" width="15%">@item.GetValue("BeginTime")</td>
+                        <td align="center" width="15%">
+                            <button class="btn btn-primary btn-sm" @onclick="()=>Option(item)">查看</button>
+                            <button class="btn btn-primary btn-sm" @onclick="()=>DeleteAsync(item)">删除</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <Page @bind-PageModel="pageModel" @bind-PageModel:event="pageModelChanged" PageEvent="()=>PageEvent(pageModel)" />
+    </div>
+</section>
+<div style="display:none; overflow:hidden;" id="ChatKms">
+    <ChatKms @bind-Data="Data" @bind-Data:event="DataChanged"/>
+</div>
+@code {
+    private List<Dictionary<string, object>> chatRecord { get; set; } = new List<Dictionary<string, object>>();
+    private ChatInfo Data { get; set; } = new ChatInfo();
+    private KmsPageModel pageModel { get; set; } = new KmsPageModel();
+    protected override void OnInitialized()
+    {
+        pageModel.PageResult = chatService.GetPage(pageModel.PageId, pageModel.PageSize);
+    }
+
+    private void PageEvent(KmsPageModel pageModel)
+    {
+        pageModel.PageResult = chatService.GetPage(pageModel.PageId, pageModel.PageSize);
+    }
+
+    private async Task DeleteAsync(Dictionary<string, object> dic)
+    {
+        if (chatService.DeleteChat(dic).IsSuccess)
+        {
+            await js.InvokeVoidAsync("FnMsg", new object[] { "删除成功" });
+            pageModel.PageResult = chatService.GetPage(pageModel.PageId, pageModel.PageSize);
+        }
+        else
+            await js.InvokeVoidAsync("FnMsg", new object[] { "删除失败" });
+    }
+
+    private void Option(Dictionary<string, object> dic)
+    {
+        var ksmJson = dic.GetValue("Kms").ToStr();
+        if (!string.IsNullOrEmpty(ksmJson))
+            Data.Kms = JsonConvert.DeserializeObject<List<KmsModel>>(ksmJson);
+
+        Data._id = dic.GetValue("_id").ToStr();
+        Data._index = dic.GetValue("_index").ToStr();
+        Data.BeginTime = dic.GetValue("BeginTime").ToStr().ToDate();
+        Data.Total = dic.GetValue("Total").ToStr().ToInt(0);
+        Data.ChatIndex = dic.GetValue("ChatIndex").ToStr();
+        Data.Name = dic.GetValue("name").ToStr();
+
+        cache.Set("IsChatShow", true);
+    }
+
+    private async void ChatAsync()
+    {
+        Data = new ChatInfo();
+        await js.InvokeVoidAsync("FnChat", new object[] { string.Empty });
+    }
+}
+
+<script>
+    var index=0;
+    $(function () {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    });
+
+    function FnLoad()
+    {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    }
+
+    function PageNum(id) {
+        $(".pagination li a").each(function () {
+            if ($(this).attr("aria-label") == undefined)
+                return;
+            if ($(this).is(id))
+                $(this).parent().addClass("active");
+            else
+                $(this).parent().removeClass("active");
+        });
+    }
+
+    function FnMsg(msg)
+    {
+        layer.closeAll('loading')
+        layer.msg(msg);
+    }
+
+    function FnReLoad()
+    {
+        window.location.reload();
+    }
+
+    function FnLoading()
+    {
+        layer.load(2);
+    }
+
+    function FnChat(title)
+    {
+        index = layer.open({
+            type: 1,
+            area: ['850px', '850px'],
+            fixed: true, maxmin: false,
+            content:  $('#ChatKms'),
+            title: "对话记录 - " + title,
+            end: function () {
+                    FnReLoad();
+                }
+        });
+    }
+
+    function FnChatTitle(title)
+    {
+        $("#layui-layer"+index+" .layui-layer-title").html("对话记录 - " +title);
+    }
+
+    function FnReload()
+    {
+        parent.layer.closeAll('iframe');
+        window.location.reload();
+    }
+</script>
