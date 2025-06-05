@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using PaddleOCRSharp;
+using Spire.Presentation;
 
 namespace FastKMSWeb.Core.Service
 {
@@ -258,6 +259,50 @@ namespace FastKMSWeb.Core.Service
                     var engine = new PaddleOCREngine();
                     var  ocrResult = engine.DetectText(buff);
                     result.Add("text", ocrResult.Text);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return new Dictionary<string, object>();
+            }
+        }
+
+        public async Task<Dictionary<string, object>> PptAsync(IBrowserFile file)
+        {
+            try
+            {
+                var result = new Dictionary<string, object>();
+                if (file == null)
+                    return result;
+
+                using (var ms = new MemoryStream())
+                {
+                    var stream = file.OpenReadStream(maxAllowedSize: 500 * 1024 * 1024);
+                    await stream.CopyToAsync(ms);
+
+                    ms.Position = 0;
+
+                    Presentation presentation = new Presentation();
+                    presentation.LoadFromStream(ms, FileFormat.PPT);
+                    var i = 0;
+                    foreach (ISlide slide in presentation.Slides)
+                    {
+                        var content = new List<string>();
+                        foreach(var text in slide.GetAllTextFrame())
+                        {
+                            if (string.IsNullOrEmpty(text.ToStr().Trim()))
+                                continue;
+                            content.Add(text.ToStr());
+                        }
+
+                        if (content.Count == 0)
+                            continue;
+
+                        result.Add($"text{i}", string.Join(",",content));
+                        i++;
+                    }
                 }
 
                 return result;

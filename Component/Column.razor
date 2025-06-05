@@ -1,0 +1,60 @@
+﻿@inject IJSRuntime js
+@inject DataService dataService
+<table id="kmsColumn" class="table table-bordered TableList">
+    <thead style="background-color:#cacaca;position: sticky;position: -webkit-sticky;top: 0;">
+        <tr>
+            <td align="center" width="20%">列名</td>
+            <td align="center" width="10%">主键</td>
+            <td align="center" width="20%">类型</td>
+            <td align="center" width="50%">备注</td>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var colmun in columnList)
+        {
+            <tr>
+                <td align="left" width="20%">@colmun.colName</td>
+                <td align="center" width="10%">@(colmun.isKey ? "是" : "否")</td>
+                <td align="left" width="20%">@colmun.showType</td>
+                <td align="left" width="50%">
+                    <InputText class="form-control" @bind-Value="@colmun.colComments" autocomplete="off" @onblur="() => UpdateColumn(colmun)" />
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public string key { get; set; }
+
+    [Parameter]
+    public string tableName { get; set; }
+
+    [Parameter]
+    public List<ColumnInfo> columnList { get; set; } = new List<ColumnInfo>();
+
+    [Parameter]
+    public EventCallback<List<ColumnInfo>> columnListChanged { get; set; }
+
+    [Parameter]
+    public bool firstRender { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!this.firstRender)
+        {
+            await js.InvokeVoidAsync("FnColumnLoad");
+            this.firstRender = true;
+        }
+    }
+
+    public void UpdateColumn(ColumnInfo colum)
+    {
+        js.InvokeVoidAsync("FnLoading");
+        firstRender = true;
+        dataService.UpdateColComments(key, tableName, colum);
+        columnList = dataService.ColumnList(key, tableName);
+        js.InvokeVoidAsync("FnClose");
+    }
+}

@@ -7,19 +7,19 @@
         <tr>
             <td align="right" width="10%" valign="middle"><label>名称：</label></td>
             <td>
-                <input type="text" @bind="@Model.Name" class="form-control" />
+                <InputText @bind-Value="@Model.Name" class="form-control" />
             </td>
         </tr>
         <tr>
             <td align="right" width="10%" valign="middle"><label>备注：</label></td>
             <td>
-                <textarea @bind="@Model.Remark" class="form-control" rows="4"></textarea>
+                <InputTextArea @bind-Value="@Model.Remark" class="form-control" rows="4" />
             </td>
         </tr>
         <tr>
             <td align="right" width="10%" valign="middle"><label>文件：</label></td>
             <td>
-                <InputFile onchange="UploadFile" class="form-control" accept=".xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff" />
+                <InputFile onchange="UploadFile" class="form-control" accept=".xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff,.ppt,.pptx" />
             </td>
         </tr>
         <tr>
@@ -55,12 +55,14 @@
             data = await impService.TextAync(file);
         else if (file.Name.EndsWith(".pdf"))
             data = await impService.PdfAsync(file);
+        else if (file.Name.EndsWith(".ppt") || file.Name.EndsWith(".pptx"))
+            data = await impService.PptAsync(file);
         else if (file.Name.EndsWith(".jpeg") || file.Name.EndsWith(".jpg") || file.Name.EndsWith(".png")
                      || file.Name.EndsWith(".bmp") || file.Name.EndsWith(".tiff"))
             data = await impService.ImageAsync(file);
         else
         {
-            await js.InvokeVoidAsync("FnMsg", new object[] { "导入失败：目前只支持.xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff文件" });
+            await js.InvokeVoidAsync("FnMsg", new object[] { "导入失败：目前只支持.xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff,.ppt,.pptx文件" });
             return;
         }
 
@@ -73,9 +75,6 @@
                     Name = Model.Name ?? file.Name,
                     Remark = Model.Remark ?? file.Name
                 };
-
-            var field = new Dictionary<string, object>();
-            field.Add("text", "text");
 
             var result = vectorService.CreateVector(kmsModel,
                 new VectorModel

@@ -12,6 +12,10 @@ namespace FastKMSWeb.Core.Model
 
         public DateTime BeginTime { get; set; }
 
+        public bool IsNL2Sql { get; set; }
+
+        public Dictionary<string, object> Db { get; set; } = new Dictionary<string, object>();
+
         public int Total { get; set; }
 
         [JsonIgnore]

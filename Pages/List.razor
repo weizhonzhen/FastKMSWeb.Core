@@ -2,15 +2,16 @@
 @inject IJSRuntime js
 @inject VectorService vectorService
 @inject IMemoryCache cache
-@inject KmsService kmsService
+@inject NavigationManager NavigationManager
+
 <section class="content">
     <div class="form-inline">
         <div class="form-group">
             <div class="form-group" style="width:220px">
                 <label>知识库</label>
-                <select class="form-control" @onchange="SelectChanage" style="width:160px;">
+                <select class="form-control" @onchange="SelectChanage" id="kmsSelect" style="width:160px;">
                     <option value="">请选择</option>
-                    @foreach (var item in kmsService.GetKmsList())
+                    @foreach (var item in KmsService.GetKmsList())
                     {
                         <option value="@item.VectorIndex">@item.Name</option>
                     }
@@ -56,16 +57,21 @@
     private OptionModel Data { get; set; } = new OptionModel();
     private string vectorIndex{ get; set; }
     private KmsPageModel pageModel { get; set; } = new KmsPageModel() { PageSize=8 };
-    protected override void OnInitialized()
+
+    protected override void OnParametersSet()
     {
+        var query = QueryHelpers.ParseQuery(new Uri(NavigationManager.Uri).Query);
+        if (query.ContainsKey("id"))
+            vectorIndex = query["Id"].ToStr();
         Query();
+        base.OnParametersSet();
     }
 
     private void PageEvent(KmsPageModel pageModel)
     {
         if (string.IsNullOrEmpty(vectorIndex))
         {
-            vectorIndex = string.Join(",", kmsService.GetKmsList().Select(b =>b.VectorIndex).ToList());
+            vectorIndex = string.Join(",", KmsService.GetKmsList().Select(b => b.VectorIndex).ToList());
             pageModel.PageResult = vectorService.GetPage(vectorIndex, pageModel.PageId, pageModel.PageSize) ?? new PageResult();
         }
         else
@@ -99,7 +105,7 @@
         pageModel.PageId = 1;
         if (string.IsNullOrEmpty(vectorIndex))
         {
-            vectorIndex = string.Join(",", kmsService.GetKmsList().Select(b => b.VectorIndex).ToList());
+            vectorIndex = string.Join(",", KmsService.GetKmsList().Select(b => b.VectorIndex).ToList());
             pageModel.PageResult = vectorService.GetPage(vectorIndex, pageModel.PageId, pageModel.PageSize) ?? new PageResult();
         }
         else
@@ -108,10 +114,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await js.InvokeVoidAsync("FnChange", new object[] { vectorIndex });
         await js.InvokeVoidAsync("FnLoad");
+        base.OnAfterRender(firstRender);
     }
 
-    private async void SelectChanage(ChangeEventArgs e)
+    private void SelectChanage(ChangeEventArgs e)
     {
         vectorIndex = e.Value.ToStr();
         Query();
@@ -127,6 +135,7 @@
     function FnMsg(msg)
     {
         layer.msg(msg);
+        layer.closeAll('loading');
     }
 
     function FnReload()
@@ -166,5 +175,10 @@
     function FnLoading()
     {
         layer.load(2);
+    }
+
+    function FnChange(id)
+    {        
+        $('#kmsSelect').val(id);
     }
 </script>

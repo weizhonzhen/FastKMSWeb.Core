@@ -8,6 +8,8 @@ namespace FastKMSWeb.Core.Model
 
         public  DateTime DateTime { get; set; }
 
+        public bool IsNL2Sql { get; set; }
+
         public string Remark {  get; set; }
 
         public string Index { get; set; } = $"kms-{Guid.NewGuid().ToString()}";

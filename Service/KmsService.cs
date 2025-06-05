@@ -34,10 +34,10 @@ namespace FastKMSWeb.Core.Service
                 return new PageResult();
         }
 
-        public List<KmsModel> GetKmsList()
+        public static List<KmsModel> GetKmsList()
         {
             var list = new List<KmsModel>();
-            var data = elasticsearch.GetList(AppSetting.KmsIndex, new QueryModel(), 999);
+            var data = new FastElasticsearch.Core.Elasticsearch().GetList(AppSetting.KmsIndex, new QueryModel(), 999);
             if (data.IsSuccess)
             {
                 data.List.ForEach(a =>

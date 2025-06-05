@@ -162,3 +162,8 @@ a, .btn-link {
 .pagination > li {
     margin-left: 10px;
 }
+
+table> tr>td {
+    word-break: break-word;
+    padding-left: 10px;
+}

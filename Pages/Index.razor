@@ -4,6 +4,7 @@
 @inject VectorService vectorService
 @inject ImpService impService
 @inject KmsService kmsService
+@inject NavigationManager navigationManager
 <section class="content">
     <div class="form-inline">
         <div class="form-group">
@@ -26,7 +27,7 @@
                 @foreach (var item in pageModel.PageResult.List)
                 {
                     <tr>
-                        <td align="center" width="15%">@item.GetValue("Name")</td>
+                        <td align="center" width="15%" @onclick="() => ToList(item)"><a href="#">@item.GetValue("Name")</a></td>
                         <td align="center" width="10%">@item.GetValue("DateTime")</td>
                         <td align="center" width="35%">@item.GetValue("Remark")</td>
                         <td align="center" width="10%">
@@ -56,6 +57,11 @@
     private void PageEvent(KmsPageModel pageModel)
     {
         pageModel.PageResult = kmsService.GetKmsPage(pageModel.PageId, pageModel.PageSize);
+    }
+
+    private void ToList(Dictionary<string, object> dic)
+    {
+        navigationManager.NavigateTo($"/List?id={dic.GetValue("VectorIndex")}");
     }
 
     private async Task DeleteAsync(Dictionary<string, object> dic)

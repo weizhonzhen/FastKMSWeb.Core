@@ -1,10 +1,9 @@
 ﻿@inject ChatService chatService
-@inject KmsService kmsService
 @inject IMemoryCache cache
 @inject IJSRuntime js
 
 <section class="content">
-    <div style="margin-top:10px;height:650px;" class="box-body table-responsive">
+    <div style="margin-top:10px;height:610px;" class="box-body table-responsive">
         <table class="table table-bordered TableList">
             <tbody>
                 @for (var i = 0; i < record.Count; i++)
@@ -33,27 +32,13 @@
             </tbody>
         </table>
     </div>
-    <div style="height:100px;margin:10px;float:left;width:95%;">
+    <div style="height:150px;margin:10px;float:left;width:95%;">
         <div><textarea @bind="message" class="form-control" rows="2" style="resize:none;"></textarea></div>
-        <div style="float:left;margin-top:10px;">
-            <lable style="margin-top:5px;color:green;">知识库：</lable>
-            @foreach (var kms in kmsService.GetKmsList())
-            {
-                <label class="checkbox-inline">
-                    @if (Data.Kms.Exists(b => b.VectorIndex == kms.VectorIndex) && !string.IsNullOrEmpty(Data.Name))
-                    {
-                        <input type="checkbox" value="@kms._id" disabled checked="checked"/> @kms.Name
-                    }
-                    else if(string.IsNullOrEmpty(Data.Name))
-                    {
-                        <input type="checkbox" value="@kms._id" @onchange="e => UpdateSelected(kms, (bool)e.Value)" /> @kms.Name
-                    }
-                    else
-                    {
-                        <input type="checkbox" value="@kms._id" disabled/> @kms.Name
-                    }
-                </label>
-            }
+        <div style="float:left;margin-top:10px;width:90%;">            
+           <div> 
+               <label style="margin-top:8px;float:left;">知识库</label>
+               <div id="kmsId" style="float:left;width: 670px;margin-left:10px;"></div>
+           </div>
         </div>
         <div style="padding-top:10px;float:right;padding-left:10px;">
             <button class="btn btn-primary btn-sm" @onclick="SendAsync">发送</button>
@@ -62,7 +47,6 @@
 </section>
 @code {
     private string message{ get; set; }
-    private bool isChangeKms { get; set; } = true;
 
     [Parameter]
     public ChatInfo Data { get; set; } = new ChatInfo();
@@ -72,26 +56,8 @@
 
     private List<KmsModel> kmsModels{ get; set; }
 
+    [Parameter]
     public List<Dictionary<string, object>> record { get; set; }=new List<Dictionary<string, object>>();
-
-    protected override void OnParametersSet()
-    {
-        var isShow = false;
-        cache.TryGetValue("IsChatShow", out isShow);
-        if (isShow)
-        {
-            var title = $"{Data.Name}（{string.Join('，', Data.Kms.Select(a => a.Name))}）";
-            js.InvokeVoidAsync("FnChat", new object[] { title });
-            cache.Set("IsChatShow", false);
-
-            if (!string.IsNullOrEmpty(Data.ChatIndex))
-                record = chatService.GetChatRecord(Data).List;
-            else
-                record = new List<Dictionary<string, object>>();
-        }
-
-        base.OnParametersSet();
-    }
 
     private async void SendAsync()
     {
@@ -101,20 +67,20 @@
             return;
         }
 
+        await js.InvokeVoidAsync("FnGetSelect", new object[] { });
         if (string.IsNullOrEmpty(Data.ChatIndex))
         {
             var title = $"{message}（{string.Join('，', Data.Kms.Select(a => a.Name))}）";
             await js.InvokeVoidAsync("FnChatTitle", new object[] { title });
         }
-
         await js.InvokeVoidAsync("FnLoading", new object[] { });
+        await js.InvokeVoidAsync("FnSelect", new object[] { SelectKmsData() });
 
         Data.ChatIndex = Data.ChatIndex ?? $"chat-{Guid.NewGuid().ToStr()}";
-        chatService.Prompt(message, Data.Kms, Data.ChatIndex, record.Select(a => a.GetValue("Request").ToStr()).ToList());
+        chatService.Prompt(message, Data.Kms, Data.ChatIndex);
         await js.InvokeVoidAsync("FnMsg", new object[] { "回复成功" });
         record = chatService.GetChatRecord(Data).List;
 
-        isChangeKms = false;
         message = string.Empty;
         StateHasChanged();
     }
@@ -127,14 +93,27 @@
         return base.ShouldRender();
     }
 
-    private void UpdateSelected(KmsModel item, bool isChecked)
+    private List<Dictionary<string, object>> SelectKmsData()
     {
-        if (!isChangeKms)
-            return;
-
-        if (isChecked)
-            Data.Kms.Add(item);
-        else
-            Data.Kms.Remove(item);
+        var data = new List<Dictionary<string, object>>();
+        foreach (var kms in KmsService.GetKmsList().FindAll(a => !a.IsNL2Sql))
+        {
+            var dic = new Dictionary<string, object>();
+            if (Data.Kms.Exists(b => b.VectorIndex == kms.VectorIndex))
+            {
+                dic.Add("name", kms.Name);
+                dic.Add("value", kms.VectorIndex);
+                dic.Add("selected", true);
+                dic.Add("disabled", true);
+            }
+            else
+            {
+                dic.Add("name", kms.Name);
+                dic.Add("value", kms.VectorIndex);
+                dic.Add("disabled", true);
+            }
+            data.Add(dic);
+        }
+        return data;
     }
 }

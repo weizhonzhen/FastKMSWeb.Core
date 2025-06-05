@@ -12,16 +12,18 @@ namespace FastKMSWeb.Core.Service
         private readonly IElasticsearchVector elasticsearchVector;
         private readonly IElasticsearch elasticsearch;
         private readonly IFastOllamaRepository ollamaRepository;
+        private readonly DataService dataService;
         public ChatService(IElasticsearchVector _elasticsearchVector, IFastOllamaRepository _ollamaRepository
-                            , IElasticsearch _elasticsearch)
+                            , IElasticsearch _elasticsearch, DataService _dataService)
         {
             elasticsearchVector = _elasticsearchVector;
             ollamaRepository = _ollamaRepository;
             elasticsearch = _elasticsearch;
+            dataService = _dataService;
         }
 
         public string Prompt(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null)
-        {
+        {         
             var msg = string.Empty;
             chatIndex = chatIndex ?? Guid.NewGuid().ToString();
 
@@ -66,16 +68,27 @@ namespace FastKMSWeb.Core.Service
                 else
                 {
                     chatRecordModel.model = AppSetting.LLmModel;
-                    msg = Chat(message, chatRecordModel, history);
+                    msg = string.Format(AppSetting.ChatResult, message);
+                    chatRecordModel.response = msg;
                 }
             }
             else
-                msg = Chat(message, chatRecordModel, history);
+            {
+                msg = string.Format(AppSetting.ChatResult, message);
+                chatRecordModel.response = msg;
+            }
 
+            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel);
+          
+            return msg;
+        }
+
+        private void AddChatRecord(ChatRecordModel chatRecordModel, string chatIndex, string message, List<KmsModel> kmsModel, Dictionary<string, object> db = null)
+        {
             var json = JsonConvert.SerializeObject(chatRecordModel).ToStr();
-           
+
             elasticsearch.Create<ChatRecordModel>(chatIndex);
-                        
+
             elasticsearch.Add(chatIndex, Guid.NewGuid().ToStr(), json.JsonToDic(true));
 
             var chatInfo = elasticsearch.GetList(AppSetting.ChatInfoIndex, new QueryModel { IsPhrase = true, Match = new Dictionary<string, object> { { nameof(ChatInfo.ChatIndex), chatIndex } } }, 1);
@@ -85,8 +98,10 @@ namespace FastKMSWeb.Core.Service
                 chatModel.ChatIndex = chatIndex;
                 chatModel.Name = message;
                 chatModel.Kms = kmsModel;
+                chatModel.IsNL2Sql = kmsModel.Exists(a => a.IsNL2Sql);
                 chatModel.Total = 1;
                 chatModel.BeginTime = DateTime.Now;
+                chatModel.Db = db;
                 json = JsonConvert.SerializeObject(chatModel).ToStr();
                 elasticsearch.Add(AppSetting.ChatInfoIndex, Guid.NewGuid().ToStr(), json.JsonToDic(true));
             }
@@ -110,8 +125,6 @@ namespace FastKMSWeb.Core.Service
 
                 elasticsearch.Update(AppSetting.ChatInfoIndex, id, new { EndTime = DateTime.Now, Total = total });
             }
-
-            return msg;
         }
 
         private string Chat(string message, ChatRecordModel kmsChatModel, List<string> history)
@@ -128,6 +141,49 @@ namespace FastKMSWeb.Core.Service
                 kmsChatModel.response = chatData.Exception;
                 return kmsChatModel.response;
             }
+        }
+
+        public string NL2Sql(string message, string key, string tableName, string chatIndex)
+        {
+            var msg = string.Empty;
+            chatIndex = chatIndex ?? Guid.NewGuid().ToString();
+
+            if (chatIndex.IndexOf("chat") < 0)
+                chatIndex = $"chat-{chatIndex}";
+
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = message };
+            var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(key, tableName));
+
+            chatRecordModel.isNL2Sql = true;
+            chatRecordModel.vectorContent = template;
+            chatRecordModel.model = AppSetting.NL2SqlModel;
+
+            var promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.NL2SqlModel });
+            promptData.PromptData = promptData.PromptData.Replace("```sql", string.Empty).Replace("```", string.Empty);
+            if (promptData.IsSuccess)
+            {
+                var nl2Data  =  dataService.NL2Data(key, promptData.PromptData, tableName);
+                msg = nl2Data.Count == 0 ? string.Format(AppSetting.ChatResult, message) : JsonConvert.SerializeObject(nl2Data);
+                chatRecordModel.nL2Sql = promptData.PromptData;
+
+                if (nl2Data.Count > 0)
+                {
+                    template = string.Format(AppSetting.PromptTemplate, msg);
+                    promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.LLmModel });
+                    msg = promptData.PromptData;
+                }
+            }
+            else
+                msg = string.Format(AppSetting.ChatResult, message);
+
+            chatRecordModel.endTime = DateTime.Now;
+            chatRecordModel.response = msg;
+
+            var kmsModel = new List<KmsModel>();
+            kmsModel.Add(new KmsModel { IsNL2Sql = true, DateTime = DateTime.Now, Name = $"{key}.{tableName}" });
+            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel, new Dictionary<string, object> { { key, tableName } });
+
+            return msg;
         }
 
         private LLMResponse Chat(string message, List<string> history)

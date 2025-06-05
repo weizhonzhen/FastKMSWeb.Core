@@ -9,6 +9,29 @@
     "Model": "bge-m3:latest"
   },
   "LLmModel": "qwen2.5:7b",
-  "PromptTemplate": "{0}\n\r生成总结",
-  "ChatTemplate": "输入：{0}\n\r请回答"
+  "PromptTemplate": "{0}\n生成总结",
+  "ChatTemplate": "输入：{0}\n请回答",
+  "ChatResult": "未找到[{0}]相关信息",
+  "NL2SqlModel": "qwen2.5-coder:7b",
+  "NL2SqlTemplate": "### 任务\n生成一个 SQL 查询来回答 [问题]{0}[/问题]\n\n### 数据库架构\n该查询将在具有以下架构的数据库上运行：\n{1}\n### 答案\n鉴于数据库架构，这是 SQL 查询，用于 [问题]{0}[/问题]",
+  "DataConfig": [
+    {
+      "ProviderName": "Oracle.ManagedDataAccess",
+      "DbType": "Oracle",
+      "ConnStr": "User Id=user;Password=pwd;Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=127.0.0.1)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=dbName)));",
+      "Flag": ":",
+      "FactoryClient": "Oracle.ManagedDataAccess.Client.OracleClientFactory",
+      "Key": "dbName",
+      "Schema": "dbName"
+    },
+    {
+      "ProviderName": "MySql.Data",
+      "DbType": "MySql",
+      "ConnStr": "Server=127.0.0.1;Port=3306;Database=xzuserdb;Uid=root;Pwd=root;",
+      "Flag": "@",
+      "FactoryClient": "MySql.Data.MySqlClient.MySqlClientFactory",
+      "Key": "dbName",
+      "Schema": "dbName"
+    }
+  ]
 }

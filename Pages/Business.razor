@@ -1,0 +1,152 @@
+﻿@page "/business"
+
+@inject IJSRuntime js
+@inject IMemoryCache cache
+@inject DataService dataService
+@inject VectorService vectorService
+
+<section class="content">
+    <div class="form-inline">
+        <div class="form-group">
+            <div class="form-group" style="width:220px">
+                <label>数据库</label>
+                <select class="form-control" @onchange="SelectChanage" id="kmsSelect" style="width:160px;">
+                    @foreach (var item in AppSetting.DataConfig)
+                    {
+                        <option value="@item.Key">@item.Key</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <button @onclick="() => Query()" class="btn btn-primary">查询</button>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:10px;float:left;width:30%;" class="box-body table-responsive">
+        <table id="kmsTable" class="table table-bordered TableList">
+            <thead style="background-color:#cacaca;">
+                <tr>
+                    <td align="center" width="50%">表名</td>
+                    <td align="center" width="50%">备注</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var table in tabelList)
+                {
+                    <tr @onclick="() => ShowColumn(table)">
+                        <td align="left" width="50%">@table.tabName</td>
+                        <td align="left" width="50%">
+                            <InputText class="form-control" @bind-Value="@table.tabComments" autocomplete="off" @onblur="() => UpdateTable(table)" />
+                         </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <MinPage @bind-PageModel="pageModel" @bind-PageModel:event="pageModelChanged" PageEvent="() => PageEvent(pageModel)" />
+    </div>
+    <div style="margin-top:10px;float:left;width:68%;margin-left:10px;height:800px;overflow-y:scroll;">
+        <Column @bind-columnList="columnList" @bind-columnList:event="columnListChanged" key="@key" tableName="@tableName" firstRender="@firstColumnRender" />
+    </div>
+</section>
+
+@code {
+    private KmsPageModel pageModel { get; set; } = new KmsPageModel() { PageSize = 15 };
+    private List<ColumnInfo> columnList = new List<ColumnInfo>();
+    private List<TableInfo> tabelList = new List<TableInfo>();
+    private string key { get; set; }
+    private string tableName { get; set; }
+    private bool firstColumnRender { get; set; }
+    private bool firstRender { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        Query();
+        base.OnParametersSet();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!this.firstRender)
+        {
+            await js.InvokeVoidAsync("FnLoad");
+            this.firstRender = true;
+        }
+    }
+
+    private async void PageEvent(KmsPageModel pageModel)
+    {
+        Query();
+        this.firstRender = false;
+    }
+
+    private void Query()
+    {
+        if (string.IsNullOrEmpty(key))
+            key = AppSetting.DataConfig.First().Key;
+        pageModel.PageResult = dataService.TableList(key, pageModel.PageId, pageModel.PageSize);
+        tabelList = JsonConvert.DeserializeObject<List<TableInfo>>(JsonConvert.SerializeObject(pageModel.PageResult.List));
+    }
+
+    private async void SelectChanage(ChangeEventArgs e)
+    {
+        await js.InvokeVoidAsync("FnLoad");
+        await js.InvokeVoidAsync("FnLoading");
+        key = e.Value.ToStr();
+        Query();
+        columnList = new List<ColumnInfo>();
+        await js.InvokeVoidAsync("FnClose");
+        StateHasChanged();
+    }
+
+    public void ShowColumn(TableInfo table)
+    {
+        firstColumnRender = false;
+        js.InvokeVoidAsync("FnLoading");
+        columnList = dataService.ColumnList(key, table.tabName);
+        tableName = table.tabName;
+        js.InvokeVoidAsync("FnClose");
+    }
+
+    public void UpdateTable(TableInfo tableInfo)
+    {
+        js.InvokeVoidAsync("FnLoading");
+        dataService.UpdateTabComments(key, tableInfo);
+        js.InvokeVoidAsync("FnClose");
+    }
+}
+
+<script>
+    $(function () {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    });
+
+    function FnColumnLoad()
+    {
+        $("#kmsColumn tbody tr").first().click();
+        $.TableClickColor("kmsColumn");
+    }
+
+    function FnMsg(msg)
+    {
+        layer.msg(msg);
+        layer.closeAll('loading');
+    }
+
+    function FnClose()
+    {
+        parent.layer.closeAll('iframe');
+        layer.closeAll('loading');
+    }
+
+    function FnLoad()
+    {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    }
+
+    function FnLoading()
+    {
+        layer.load(2);
+    }
+</script>
