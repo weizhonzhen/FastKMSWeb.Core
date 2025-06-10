@@ -22,7 +22,7 @@ namespace FastKMSWeb.Core.Service
             dataService = _dataService;
         }
 
-        public string Prompt(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null)
+        public string Chat(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null)
         {         
             var msg = string.Empty;
             chatIndex = chatIndex ?? Guid.NewGuid().ToString();
@@ -53,16 +53,15 @@ namespace FastKMSWeb.Core.Service
                 if (data.Count > 0)
                 {
                     var content = data.Select(a => a.GetValue("text").ToStr()).ToList();
-                    var template = string.Format(AppSetting.PromptTemplate, string.Join("\n\r", content));
 
                     chatRecordModel.isPrompt = true;
-                    chatRecordModel.vectorContent = template;
+                    chatRecordModel.vectorContent = string.Join("\n\r", content);
                     chatRecordModel.model = AppSetting.LLmModel;
 
-                    var promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.LLmModel });
+                    var chatData = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel,history= content });
 
                     chatRecordModel.endTime = DateTime.Now;
-                    chatRecordModel.response = promptData.IsSuccess ? promptData.PromptData : promptData.Exception;
+                    chatRecordModel.response = chatData.IsSuccess ? chatData.ChatData : chatData.Exception;
                     msg = chatRecordModel.response;
                 }
                 else
@@ -83,7 +82,7 @@ namespace FastKMSWeb.Core.Service
             return msg;
         }
 
-        private void AddChatRecord(ChatRecordModel chatRecordModel, string chatIndex, string message, List<KmsModel> kmsModel, Dictionary<string, object> db = null)
+        private void AddChatRecord(ChatRecordModel chatRecordModel, string chatIndex, string message, List<KmsModel> kmsModel, DbInfo dbInfo = null)
         {
             var json = JsonConvert.SerializeObject(chatRecordModel).ToStr();
 
@@ -91,7 +90,16 @@ namespace FastKMSWeb.Core.Service
 
             elasticsearch.Add(chatIndex, Guid.NewGuid().ToStr(), json.JsonToDic(true));
 
-            var chatInfo = elasticsearch.GetList(AppSetting.ChatInfoIndex, new QueryModel { IsPhrase = true, Match = new Dictionary<string, object> { { nameof(ChatInfo.ChatIndex), chatIndex } } }, 1);
+            if (elasticsearch.GetList(AppSetting.ChatInfoIndex, new QueryModel()).List.Count == 0)
+                elasticsearch.Create<ChatInfo>(AppSetting.ChatInfoIndex);
+
+            var chatInfo = elasticsearch.GetList(AppSetting.ChatInfoIndex,
+                                                new QueryModel
+                                                {
+                                                    IsPhrase = true,
+                                                    Match = new Dictionary<string, object> { { nameof(ChatInfo.ChatIndex), chatIndex } }
+                                                }, 1);
+
             if (chatInfo.List.Count == 0)
             {
                 var chatModel = new ChatInfo();
@@ -101,22 +109,12 @@ namespace FastKMSWeb.Core.Service
                 chatModel.IsNL2Sql = kmsModel.Exists(a => a.IsNL2Sql);
                 chatModel.Total = 1;
                 chatModel.BeginTime = DateTime.Now;
-                chatModel.Db = db;
+                chatModel.DbInfo = dbInfo;
                 json = JsonConvert.SerializeObject(chatModel).ToStr();
                 elasticsearch.Add(AppSetting.ChatInfoIndex, Guid.NewGuid().ToStr(), json.JsonToDic(true));
             }
 
             if (chatInfo.IsSuccess && chatInfo.List.Count > 0)
-            {
-                var total = chatInfo.List[0].GetValue("total").ToStr().ToInt(0);
-                total++;
-
-                var id = chatInfo.List[0].GetValue("_id").ToStr();
-
-                elasticsearch.Update(AppSetting.ChatInfoIndex, id, new { EndTime = DateTime.Now, Total = total });
-            }
-
-            if (!chatInfo.IsSuccess)
             {
                 var total = chatInfo.List[0].GetValue("total").ToStr().ToInt(0);
                 total++;
@@ -143,7 +141,7 @@ namespace FastKMSWeb.Core.Service
             }
         }
 
-        public string NL2Sql(string message, string key, string tableName, string chatIndex)
+        public string NL2Sql(string message, DbInfo dbInfo, string chatIndex)
         {
             var msg = string.Empty;
             chatIndex = chatIndex ?? Guid.NewGuid().ToString();
@@ -152,26 +150,26 @@ namespace FastKMSWeb.Core.Service
                 chatIndex = $"chat-{chatIndex}";
 
             var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = message };
-            var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(key, tableName));
+            var config = AppSetting.DataConfig.Find(a => a.Key == dbInfo.Key);
+            var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(dbInfo.Key, dbInfo.TableName), config.DbType);
 
             chatRecordModel.isNL2Sql = true;
             chatRecordModel.vectorContent = template;
             chatRecordModel.model = AppSetting.NL2SqlModel;
 
             var promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.NL2SqlModel });
-            promptData.PromptData = promptData.PromptData.Replace("```sql", string.Empty).Replace("```", string.Empty);
+
+            if (promptData.PromptData.IndexOf("```sql") >= 0)
+                promptData.PromptData = promptData.PromptData.Substring(promptData.PromptData.IndexOf("```sql"), promptData.PromptData.Length - promptData.PromptData.IndexOf("```sql"));
+            if (promptData.PromptData.LastIndexOf("```") >= 0)
+                promptData.PromptData = promptData.PromptData.Substring(0, promptData.PromptData.LastIndexOf("```"));
+
+            promptData.PromptData = promptData.PromptData.Replace("```sql", string.Empty).Replace("```", string.Empty).Replace("\n", " ").Replace(";", string.Empty);
             if (promptData.IsSuccess)
             {
-                var nl2Data  =  dataService.NL2Data(key, promptData.PromptData, tableName);
-                msg = nl2Data.Count == 0 ? string.Format(AppSetting.ChatResult, message) : JsonConvert.SerializeObject(nl2Data);
+                var nl2Data = dataService.NL2Data(dbInfo.Key, promptData.PromptData, dbInfo.TableName, 10, dbInfo.IsView);
+                msg = nl2Data.Count == 0 ? string.Format(AppSetting.ChatResult, message) : nl2Data.ToTable();
                 chatRecordModel.nL2Sql = promptData.PromptData;
-
-                if (nl2Data.Count > 0)
-                {
-                    template = string.Format(AppSetting.PromptTemplate, msg);
-                    promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.LLmModel });
-                    msg = promptData.PromptData;
-                }
             }
             else
                 msg = string.Format(AppSetting.ChatResult, message);
@@ -180,21 +178,24 @@ namespace FastKMSWeb.Core.Service
             chatRecordModel.response = msg;
 
             var kmsModel = new List<KmsModel>();
-            kmsModel.Add(new KmsModel { IsNL2Sql = true, DateTime = DateTime.Now, Name = $"{key}.{tableName}" });
-            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel, new Dictionary<string, object> { { key, tableName } });
+            kmsModel.Add(new KmsModel { IsNL2Sql = true, DateTime = DateTime.Now, Name = $"{dbInfo.Key}.{string.Join(" ", dbInfo.TableName)}" });
+            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel, dbInfo);
 
             return msg;
         }
 
         private LLMResponse Chat(string message, List<string> history)
         {
-            var template = string.Format(AppSetting.ChatTemplate, message);
-            return ollamaRepository.Chat(new ChatModel { content = template, history = history, model = AppSetting.LLmModel });
+            return ollamaRepository.Chat(new ChatModel { content = message, history = history, model = AppSetting.LLmModel });
         }
 
         public PageResult GetPage(int pageId, int pageSize)
         {
-            var data = elasticsearch.Page(pageSize, pageId, AppSetting.ChatInfoIndex, new QueryModel());
+            var data = elasticsearch.Page(pageSize, pageId, AppSetting.ChatInfoIndex,
+                                            new QueryModel
+                                            {
+                                                Sort = new Dictionary<string, object> { { nameof(ChatInfo.BeginTime), "desc" } }
+                                            });
             return data.PageResult;
         }
 

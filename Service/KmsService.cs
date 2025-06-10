@@ -26,7 +26,11 @@ namespace FastKMSWeb.Core.Service
 
         public PageResult GetKmsPage(int pageId, int pageSize)
         {
-            var data = elasticsearch.Page(pageSize, pageId, AppSetting.KmsIndex, new QueryModel());
+            var data = elasticsearch.Page(pageSize, pageId, AppSetting.KmsIndex,
+                 new QueryModel
+                 {
+                     Sort = new Dictionary<string, object> { { nameof(KmsModel.DateTime), "desc" } }
+                 });
 
             if (data.IsSuccess)
                 return data.PageResult;

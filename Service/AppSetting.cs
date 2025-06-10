@@ -8,13 +8,12 @@ namespace FastKMSWeb.Core.Service
 
         public static readonly string KmsIndex = "kmsIndex";
 
-        public static readonly string PromptTemplate = Extension.GetConfig("PromptTemplate");
+        public static readonly string ViewTableIndex = "view-Table-Index";
+        public static readonly string ViewColumnIndex = "view-Column-Index";
 
         public static readonly string ChatInfoIndex = "chatIndex";
 
         public static readonly string LLmModel = Extension.GetConfig("LLmModel");
-
-        public static readonly string ChatTemplate = Extension.GetConfig("ChatTemplate");
 
         public static readonly List<DataConfig> DataConfig = Extension.GetConfig<DataConfig>("DataConfig");
 
@@ -22,6 +21,6 @@ namespace FastKMSWeb.Core.Service
 
         public static readonly string NL2SqlTemplate = Extension.GetConfig("NL2SqlTemplate");
 
-        public static readonly string ChatResult = Extension.GetConfig("ChatResult");
+        public static readonly string ChatResult = Extension.GetConfig("ChatResult");  
     }
 }

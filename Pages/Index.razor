@@ -141,7 +141,12 @@
 
     function FnReload()
     {
-        parent.layer.closeAll('iframe');
+        parent.layer.closeAll('page');
         window.location.reload();
+    }
+
+    function FnClose()
+    {
+        parent.layer.closeAll('page');
     }
 </script>

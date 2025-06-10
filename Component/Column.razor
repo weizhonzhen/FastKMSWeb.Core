@@ -32,6 +32,9 @@
     public string tableName { get; set; }
 
     [Parameter]
+    public bool isView { get; set; }
+
+    [Parameter]
     public List<ColumnInfo> columnList { get; set; } = new List<ColumnInfo>();
 
     [Parameter]
@@ -53,8 +56,10 @@
     {
         js.InvokeVoidAsync("FnLoading");
         firstRender = true;
-        dataService.UpdateColComments(key, tableName, colum);
-        columnList = dataService.ColumnList(key, tableName);
+        dataService.UpdateColComments(key, tableName, colum, isView);
+
+        columnList = dataService.ColumnList(key, tableName, isView);
+
         js.InvokeVoidAsync("FnClose");
     }
 }

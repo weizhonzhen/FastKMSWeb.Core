@@ -33,15 +33,16 @@
         </table>
     </div>
     <div style="height:150px;margin:10px;float:left;width:95%;">
-        <div><textarea @bind="message" class="form-control" rows="2" style="resize:none;"></textarea></div>
-        <div style="float:left;margin-top:10px;width:90%;">            
+        <div><textarea @bind="message" class="form-control" rows="4" style="resize:none;" autocomplete="off"></textarea></div>
+        <div style="float:left;margin-top:10px;">            
            <div> 
                <label style="margin-top:8px;float:left;">知识库</label>
-               <div id="kmsId" style="float:left;width: 670px;margin-left:10px;"></div>
+               <div id="kmsId" style="float:left;width: 640px;margin-left:10px;"></div>
            </div>
         </div>
-        <div style="padding-top:10px;float:right;padding-left:10px;">
+        <div style="padding-top:15px;float:left;padding-left:10px;">
             <button class="btn btn-primary btn-sm" @onclick="SendAsync">发送</button>
+            <button onclick="FnClose()" class="btn btn-primary btn-sm" style="margin-left:10px;">关闭</button>
         </div>
     </div>
 </section>
@@ -67,17 +68,17 @@
             return;
         }
 
-        await js.InvokeVoidAsync("FnGetSelect", new object[] { });
+        await js.InvokeVoidAsync("FnGetSelect", new object[] { "GetKmsValue" });
         if (string.IsNullOrEmpty(Data.ChatIndex))
         {
             var title = $"{message}（{string.Join('，', Data.Kms.Select(a => a.Name))}）";
             await js.InvokeVoidAsync("FnChatTitle", new object[] { title });
         }
         await js.InvokeVoidAsync("FnLoading", new object[] { });
-        await js.InvokeVoidAsync("FnSelect", new object[] { SelectKmsData() });
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsId", SelectKmsData() });
 
         Data.ChatIndex = Data.ChatIndex ?? $"chat-{Guid.NewGuid().ToStr()}";
-        chatService.Prompt(message, Data.Kms, Data.ChatIndex);
+        chatService.Chat(message, Data.Kms, Data.ChatIndex);
         await js.InvokeVoidAsync("FnMsg", new object[] { "回复成功" });
         record = chatService.GetChatRecord(Data).List;
 

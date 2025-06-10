@@ -21,7 +21,7 @@ namespace FastKMSWeb.Core.Service
 
                 using (var ms = new MemoryStream())
                 {
-                    var stream = file.OpenReadStream();
+                    var stream = file.OpenReadStream(maxAllowedSize: 500 * 1024 * 1024);
                     await stream.CopyToAsync(ms);
 
                     var keyList = new Dictionary<string, object>();

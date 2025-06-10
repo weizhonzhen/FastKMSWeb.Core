@@ -87,7 +87,7 @@
         Data.Total = dic.GetValue("Total").ToStr().ToInt(0);
         Data.ChatIndex = dic.GetValue("ChatIndex").ToStr();
         Data.Name = dic.GetValue("name").ToStr();
-        Data.Db = JsonConvert.DeserializeObject<Dictionary<string, object>>(dic.GetValue("db").ToStr()) ?? new Dictionary<string, object>();
+        Data.DbInfo = JsonConvert.DeserializeObject<DbInfo>(dic.GetValue("DbInfo").ToStr()) ?? new DbInfo();
 
         if (!string.IsNullOrEmpty(Data.ChatIndex))
             chatRecord = chatService.GetChatRecord(Data).List;
@@ -97,21 +97,20 @@
         var title = $"{Data.Name}（{string.Join('，', Data.Kms.Select(a => a.Name))}）";
         if (!dic.GetValue("IsNL2Sql").ToBool())
         {
-            js.InvokeVoidAsync("FnSelect", new object[] { SelectKmsData() });
+            js.InvokeVoidAsync("FnSelect", new object[] { "kmsId", SelectKmsData() });
             js.InvokeVoidAsync("FnKmsChat", new object[] { title });
         }
         else
         {
-            if (Data.Db.Count > 0)
-            {
-                DbKms.Key = Data.Db.Keys.First();
-                DbKms.TableName = Data.Db.Values.First().ToStr();
-                DbKms.TableList = dataService.TableList(DbKms.Key, 1, 99).List;
-                js.InvokeVoidAsync("FnBusinessSelect", new object[] { });
-            }
+            if(Data.DbInfo.IsView)
+                DbKms.TableList = DataService.ViewList(Data.DbInfo.Key, 1, 999).List;
+            else
+                DbKms.TableList = DataService.TableList(Data.DbInfo.Key, 1, 999).List;
 
             DbKms.Record = chatRecord;
-            js.InvokeVoidAsync("FnBusinessChat", new object[] { title });            
+            js.InvokeVoidAsync("FnSelect", new object[] { "kmsBusinessId", SelectBusinessData() });
+            js.InvokeVoidAsync("FnBusinessChat", new object[] { title });
+            js.InvokeVoidAsync("FnBusinessSelect", new object[] { });
         }
     }
 
@@ -120,13 +119,14 @@
         Data = new ChatInfo();
         Data.Kms = KmsService.GetKmsList();
         await js.InvokeVoidAsync("FnKmsChat", new object[] { string.Empty });
-        await js.InvokeVoidAsync("FnSelect", new object[] { SelectKmsData() });
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsId", SelectKmsData() });
     }
 
     private async void ChatBusinessAsync()
     {
         Data = new ChatInfo();
         await js.InvokeVoidAsync("FnBusinessChat", new object[] { string.Empty });
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsBusinessId", SelectBusinessData() });
     }
 
     private List<Dictionary<string, object>> SelectKmsData()
@@ -158,6 +158,45 @@
         return data;
     }
 
+    private List<Dictionary<string, object>> SelectBusinessData()
+    {
+        var data = new List<Dictionary<string, object>>();
+
+        if (string.IsNullOrEmpty(Data.DbInfo.Key))
+            return data;
+
+        var tableList = new List<Dictionary<string, object>>();
+        if (Data.DbInfo.IsView)
+            tableList = DataService.ViewList(Data.DbInfo.Key, 1, 999).List;
+        if (!Data.DbInfo.IsView)
+            tableList = DataService.TableList(Data.DbInfo.Key, 1, 999).List;
+
+        foreach (var item in tableList)
+        {
+            var dic = new Dictionary<string, object>();
+            if (Data.DbInfo.TableName.Exists(b => b == item.GetValue("tabName").ToStr()))
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+                dic.Add("selected", true);
+                dic.Add("disabled", true);
+            }
+            else if (string.IsNullOrEmpty(Data.Name))
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+            }
+            else
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+                dic.Add("disabled", true);
+            }
+            data.Add(dic);
+        }
+        return data;
+    }
+
     [JSInvokable]
     public static void GetKmsValue(List<Dictionary<string,object>> value)
     {
@@ -174,6 +213,23 @@
         }
         else
             Data.Kms = new List<KmsModel>();
+    }
+
+    [JSInvokable]
+    public static void GetBusinessValue(List<Dictionary<string, object>> value)
+    {
+        if (value != null && value.Count > 0)
+            Data.DbInfo.TableName = value.Select(a => a.GetValue("value").ToStr()).ToList();
+        else
+            Data.Kms = new List<KmsModel>();
+
+        var kms = new KmsModel();
+        kms.IsNL2Sql = true;
+        kms.Name = string.Join(" ", Data.DbInfo.TableName);
+        kms.DateTime = DateTime.Now;
+
+        Data.Kms.Clear();
+        Data.Kms.Add(kms);
     }
 }
 
@@ -204,7 +260,7 @@
 
     function FnMsg(msg)
     {
-        layer.closeAll('loading')
+        layer.closeAll('loading');
         layer.msg(msg);
     }
 
@@ -249,22 +305,27 @@
 
     function FnReload()
     {
-        parent.layer.closeAll('iframe');
+        layer.closeAll('page');
         window.location.reload();
     }
 
-    function FnSelect(json)
+    function FnSelect(id,json)
     {
-       select = xmSelect.render({ el: '#kmsId', data: json });
+       select = xmSelect.render({ el: '#'+id, data: json });
     }
 
-    function FnGetSelect()
+    function FnGetSelect(fnName)
     {        
-        DotNet.invokeMethodAsync("FastKMSWeb.Core","GetKmsValue",select.getValue());
+        DotNet.invokeMethodAsync("FastKMSWeb.Core",fnName,select.getValue());
     }
 
     function FnBusinessSelect()
     {
         $("#ChatBusiness select").attr("disabled","disabled");
+    }
+
+    function FnClose()
+    {
+        layer.closeAll('page');
     }
 </script>

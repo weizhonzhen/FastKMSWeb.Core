@@ -15,6 +15,7 @@ builder.Services.AddScoped<VectorService>();
 builder.Services.AddScoped<KmsService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<DataService>();
+builder.Services.AddScoped<AgentService>();
 
 var app = builder.Build();
 

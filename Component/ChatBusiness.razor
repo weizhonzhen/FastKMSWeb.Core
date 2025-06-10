@@ -34,14 +34,14 @@
         </table>
     </div>
     <div style="height:150px;margin:10px;float:left;width:95%;">
-        <div><textarea @bind="message" class="form-control" rows="2" style="resize:none;"></textarea></div>
-        <div style="float:left;margin-top:10px;width:90%;">            
+        <div><textarea @bind="message" class="form-control" rows="4" style="resize:none;" autocomplete="off"></textarea></div>
+        <div style="float:left;margin-top:10px;">            
            <div>
-                <select class="form-control" style="width:160px;float:left;margin-right:10px;" @onchange="SelectDbChange">
+                <select class="form-control" style="width:90px;float:left;margin-right:10px;" @onchange="SelectDbChange">
                     <option value="">请选择</option>
                     @foreach (var item in AppSetting.DataConfig)
                     {
-                        if (DbKms.Key == item.Key)
+                        if (Data.DbInfo.Key == item.Key)
                         {
                             <option value="@item.Key" selected="selected">@item.Key</option>
                         }
@@ -50,25 +50,25 @@
                             <option value="@item.Key">@item.Key</option>
                         }
                     }
-                </select>
-                <select class="form-control" style="width:500px;" @onchange="SelectTableChange">
-                    <option value="">请选择</option>
-                    @foreach (var item in DbKms.TableList)
+                </select>        
+                <select class="form-control" @onchange="TypeChanage" id="typeSelect" style="width:90px;float:left;margin-right:10px;">
+                    @if (!Data.DbInfo.IsView)
                     {
-                        if (@item.GetValue("tabName").ToStr() == DbKms.TableName)
-                        {
-                            <option value="@item.GetValue("tabName")" selected="selected">@($"{item.GetValue("tabName")}-{item.GetValue("tabComments")}")</option>
-                        }
-                        else
-                        {
-                            <option value="@item.GetValue("tabName")">@($"{item.GetValue("tabName")}-{item.GetValue("tabComments")}")</option>
-                        }
+                        <option value="1" selected="selected">表</option>
+                        <option value="2">视图</option>
+                    }
+                    else
+                    {
+                        <option value="1">表</option>
+                        <option value="2" selected="selected">视图</option>                            
                     }
                 </select>
+                <div id="kmsBusinessId" style="float:left;width: 490px;"></div>
            </div>
         </div>
-        <div style="padding-top:10px;float:right;padding-left:10px;">
+        <div style="padding-top:10px;float:left;padding-left:10px;">
             <button class="btn btn-primary btn-sm" @onclick="SendAsync">发送</button>
+            <button onclick="FnClose()" class="btn btn-primary btn-sm" style="margin-left:10px;">关闭</button>
         </div>
     </div>
 </section>
@@ -95,6 +95,14 @@
             return;
         }
 
+        await js.InvokeVoidAsync("FnGetSelect", new object[] { "GetBusinessValue" });
+
+        if (Data.DbInfo.TableName.Count==0)
+        {
+            await js.InvokeVoidAsync("FnMsg", new object[] { "请选择数据对象" });
+            return;
+        }
+
         if (string.IsNullOrEmpty(Data.ChatIndex))
         {
             var title = $"{message}（{string.Join('，', Data.Kms.Select(a => a.Name))}）";
@@ -102,9 +110,11 @@
         }
 
         await js.InvokeVoidAsync("FnLoading", new object[] { });
+        await js.InvokeVoidAsync("FnBusinessChat", new object[] { string.Empty });
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsBusinessId", SelectBusinessData() });
 
         Data.ChatIndex = Data.ChatIndex ?? $"chat-{Guid.NewGuid().ToStr()}";
-        chatService.NL2Sql(message, DbKms.Key, DbKms.TableName, Data.ChatIndex);
+        chatService.NL2Sql(message, Data.DbInfo, Data.ChatIndex);
         await js.InvokeVoidAsync("FnMsg", new object[] { "回复成功" });
         DbKms.Record = chatService.GetChatRecord(Data).List;
 
@@ -112,23 +122,59 @@
         StateHasChanged();
     }
 
-    private void SelectDbChange(ChangeEventArgs e)
+    private async void SelectDbChange(ChangeEventArgs e)
     {
-        DbKms.Key = e.Value.ToStr();
-        DbKms.TableList = dataService.TableList(DbKms.Key, 1, 999).List;
+        Data.DbInfo.IsView = false;
+        Data.DbInfo.Key = e.Value.ToStr();
+        DbKms.TableList = DataService.TableList(Data.DbInfo.Key, 1, 999).List;
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsBusinessId", SelectBusinessData() });
         StateHasChanged();
     }
 
-    private void SelectTableChange(ChangeEventArgs e)
+    private async void TypeChanage(ChangeEventArgs e)
     {
-        var kms = new KmsModel();
-        kms.IsNL2Sql = true;
-        kms.Name = e.Value.ToStr();
-        kms.DateTime = DateTime.Now;
+        Data.DbInfo.IsView = e.Value.ToStr() == "1" ? false : true;
+        await js.InvokeVoidAsync("FnSelect", new object[] { "kmsBusinessId", SelectBusinessData() });
+        StateHasChanged();
+    }
 
-        Data.Kms.Clear();
-        Data.Kms.Add(kms);
-        DbKms.TableName = e.Value.ToStr();
+    private List<Dictionary<string, object>> SelectBusinessData()
+    {
+        var data = new List<Dictionary<string, object>>();
+
+        if (string.IsNullOrEmpty(Data.DbInfo.Key))
+            return data;
+
+        var tableList = new List<Dictionary<string, object>>();
+        if (Data.DbInfo.IsView)
+            tableList = DataService.ViewList(Data.DbInfo.Key, 1, 999).List;
+        if (!Data.DbInfo.IsView)
+            tableList = DataService.TableList(Data.DbInfo.Key, 1, 999).List;
+
+        foreach (var item in tableList)
+        {
+            var dic = new Dictionary<string, object>();
+            if (Data.DbInfo.TableName.Exists(b => b == item.GetValue("tabName").ToStr()))
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+                dic.Add("selected", true);
+                dic.Add("disabled", true);
+            }
+            else if (string.IsNullOrEmpty(Data.Name))
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+            }
+            else
+            {
+                dic.Add("name", $"{item.GetValue("tabName").ToStr()}-{item.GetValue("tabComments").ToStr()}");
+                dic.Add("value", item.GetValue("tabName").ToStr());
+                dic.Add("disabled", true);
+            }
+            data.Add(dic);
+        }
+        return data;
     }
 
     protected override bool ShouldRender()

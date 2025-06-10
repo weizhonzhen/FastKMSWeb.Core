@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System.Data.Common;
 using System.Reflection;
+using System.Text;
 
 namespace FastKMSWeb.Core.Service
 {
@@ -150,6 +151,9 @@ namespace FastKMSWeb.Core.Service
                 var dic = new Dictionary<string, object>();
                 cols.ForEach(a =>
                 {
+                    if (string.Compare(a, "rn", true) == 0)
+                        return;
+
                     var info = column.Find(b => string.Compare(a, b.colName, true) == 0);
                     var key = info == null ? a : info.colComments;
                     key = string.IsNullOrEmpty(key) ? a : key;
@@ -162,6 +166,33 @@ namespace FastKMSWeb.Core.Service
                 result.Add(dic);
             }
             return result;
+        }
+
+        internal static string ToTable(this List<Dictionary<string, object>> list)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<table width='100%'>");
+            sb.Append("<thead><tr>");
+
+            foreach (var item in list.First())
+            {
+                sb.Append($"<td>{item.Key}</td>");
+            }
+
+            sb.Append("</tr></thead>");
+            sb.Append("<tbody>");
+            foreach (var item in list)
+            {
+                sb.Append("<tr>");
+                foreach (var key in item)
+                {
+                    sb.Append($"<td>{key.Value}</td>");
+                }
+                sb.Append("</tr>");
+            }
+            sb.Append("</tbody>");
+            sb.Append("</table>");
+            return sb.ToStr();
         }
     }
 

@@ -17,6 +17,13 @@
                     }
                 </select>
             </div>
+            <div class="form-group" style="width:220px">
+                <label>类型</label>
+                <select class="form-control" @onchange="TypeChanage" id="typeSelect" style="width:160px;">
+                    <option value="1" selected="selected">表</option>
+                    <option value="2">视图</option>
+                </select>
+            </div>
             <div class="form-group">
                 <button @onclick="() => Query()" class="btn btn-primary">查询</button>
             </div>
@@ -45,7 +52,7 @@
         <MinPage @bind-PageModel="pageModel" @bind-PageModel:event="pageModelChanged" PageEvent="() => PageEvent(pageModel)" />
     </div>
     <div style="margin-top:10px;float:left;width:68%;margin-left:10px;height:800px;overflow-y:scroll;">
-        <Column @bind-columnList="columnList" @bind-columnList:event="columnListChanged" key="@key" tableName="@tableName" firstRender="@firstColumnRender" />
+        <Column @bind-columnList="columnList" @bind-columnList:event="columnListChanged" key="@key" tableName="@tableName" firstRender="@firstColumnRender" isView="@isView" />
     </div>
 </section>
 
@@ -54,6 +61,7 @@
     private List<ColumnInfo> columnList = new List<ColumnInfo>();
     private List<TableInfo> tabelList = new List<TableInfo>();
     private string key { get; set; }
+    private bool isView { get; set; }
     private string tableName { get; set; }
     private bool firstColumnRender { get; set; }
     private bool firstRender { get; set; }
@@ -73,7 +81,7 @@
         }
     }
 
-    private async void PageEvent(KmsPageModel pageModel)
+    private void PageEvent(KmsPageModel pageModel)
     {
         Query();
         this.firstRender = false;
@@ -83,26 +91,41 @@
     {
         if (string.IsNullOrEmpty(key))
             key = AppSetting.DataConfig.First().Key;
-        pageModel.PageResult = dataService.TableList(key, pageModel.PageId, pageModel.PageSize);
+        if (isView)
+            pageModel.PageResult = DataService.ViewList(key, pageModel.PageId, pageModel.PageSize);
+        else
+            pageModel.PageResult = DataService.TableList(key, pageModel.PageId, pageModel.PageSize);
+
+        columnList = new List<ColumnInfo>();
+
         tabelList = JsonConvert.DeserializeObject<List<TableInfo>>(JsonConvert.SerializeObject(pageModel.PageResult.List));
+        StateHasChanged();
     }
 
     private async void SelectChanage(ChangeEventArgs e)
     {
-        await js.InvokeVoidAsync("FnLoad");
         await js.InvokeVoidAsync("FnLoading");
         key = e.Value.ToStr();
         Query();
-        columnList = new List<ColumnInfo>();
         await js.InvokeVoidAsync("FnClose");
-        StateHasChanged();
+        await js.InvokeVoidAsync("FnLoad");
+    }
+
+    private async void TypeChanage(ChangeEventArgs e)
+    {
+        pageModel = new KmsPageModel() { PageSize = 15 ,PageResult=new PageResult()};
+        await js.InvokeVoidAsync("FnLoading");
+        isView = e.Value.ToStr() == "1" ? false : true;
+        Query();
+        await js.InvokeVoidAsync("FnClose");
+        await js.InvokeVoidAsync("FnLoad");
     }
 
     public void ShowColumn(TableInfo table)
     {
         firstColumnRender = false;
         js.InvokeVoidAsync("FnLoading");
-        columnList = dataService.ColumnList(key, table.tabName);
+        columnList = dataService.ColumnList(key, table.tabName,isView);
         tableName = table.tabName;
         js.InvokeVoidAsync("FnClose");
     }
@@ -110,7 +133,7 @@
     public void UpdateTable(TableInfo tableInfo)
     {
         js.InvokeVoidAsync("FnLoading");
-        dataService.UpdateTabComments(key, tableInfo);
+        dataService.UpdateTabComments(key, tableInfo, isView);
         js.InvokeVoidAsync("FnClose");
     }
 }

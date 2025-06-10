@@ -22,26 +22,38 @@ namespace FastKMSWeb.Core.Service
 
         public EsResponse AddVectorData(Dictionary<string, object> data, KmsModel kmsModel)
         {
-            var value = data.Select(b => b.Value.ToStr()).ToList();
-            var lLMResponse = ollamaRepository.Embed(new EmbedModel { content = value });
+            var llms = new List<LLMResponse>();
+            var pageId = 1;
+            var pageSize = 100;
 
-            lLMResponse.EmbedData.ForEach(item =>
+            var query = data.Select(a => a.Value.ToStr());
+            var list = query.Skip(pageSize * (pageId - 1)).Take(pageSize).ToList();
+
+            while (list.Count > 0)
             {
-                foreach (var keyValue in item)
+                var lLMResponse = ollamaRepository.Embed(new EmbedModel { content = list});
+                lLMResponse.EmbedData.ForEach(item =>
                 {
-                    var vectorData = new VectorData();
-                    vectorData.Field = new Dictionary<string, object> { { AppSetting.FieldKey, keyValue.Key } };
-                    vectorData.Data = keyValue.Value.ToArray();
-                    elasticsearchVector.AddVectorData(kmsModel.VectorIndex, vectorData);
-                }
-            });
+                    foreach (var keyValue in item)
+                    {
+                        var vectorData = new VectorData();
+                        vectorData.Field = new Dictionary<string, object> { { AppSetting.FieldKey, keyValue.Key } };
+                        vectorData.Data = keyValue.Value.ToArray();
+                        elasticsearchVector.AddVectorData(kmsModel.VectorIndex, vectorData);
+                    }
+                });
 
-            if (lLMResponse.IsSuccess)
+                llms.Add(lLMResponse);
+                pageId++;
+                list = query.Skip(pageSize * (pageId - 1)).Take(pageSize).ToList();
+            }
+
+            if (!llms.Exists(a => !a.IsSuccess))
                 return new EsResponse() { IsSuccess = true };
             else
             {
                 DeleteVector(kmsModel.VectorIndex, kmsModel.Index);
-                return new EsResponse { Exception = new Exception(lLMResponse.Exception) };
+                return new EsResponse { Exception = new Exception(string.Join("\n\r", llms.FindAll(a => !a.IsSuccess).Select(a => a.Exception))) };
             }
         }
 
@@ -53,6 +65,10 @@ namespace FastKMSWeb.Core.Service
             if (result.IsSuccess)
             {
                 var json = JsonConvert.SerializeObject(kmsModel).ToStr();
+
+                if (elasticsearch.GetList(AppSetting.KmsIndex, new QueryModel()).List.Count == 0)
+                    elasticsearch.Create<KmsModel>(AppSetting.KmsIndex);
+
                 return elasticsearch.Add(AppSetting.KmsIndex, kmsModel.Index, json.JsonToDic(true));
             }
             else
