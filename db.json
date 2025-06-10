@@ -9,8 +9,6 @@
     "Model": "bge-m3:latest"
   },
   "LLmModel": "qwen2.5:7b",
-  "PromptTemplate": "{0}\n生成总结",
-  "ChatTemplate": "输入：{0}\n请回答",
   "ChatResult": "未找到[{0}]相关信息",
   "NL2SqlModel": "qwen2.5-coder:7b",
   "NL2SqlTemplate": "### 任务\n生成一个 SQL 查询来回答 [问题]{0}[/问题]\n\n### 数据库架构\n该查询将在具有以下架构的数据库上运行：\n{1}\n### 答案\n鉴于数据库架构，这是 SQL 查询，用于 [问题]{0}[/问题]",
