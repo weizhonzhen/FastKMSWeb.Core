@@ -1,6 +1,7 @@
 ﻿using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSWeb.Core.Model;
+using FastKMSWeb.Core.Pages;
 using FastOllama.Core;
 using FastOllama.Core.Model;
 using Newtonsoft.Json;
@@ -58,10 +59,10 @@ namespace FastKMSWeb.Core.Service
                     chatRecordModel.vectorContent = string.Join("\n\r", content);
                     chatRecordModel.model = AppSetting.LLmModel;
 
-                    var chatData = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel,history= content });
+                    var chat = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel,history= content });
 
                     chatRecordModel.endTime = DateTime.Now;
-                    chatRecordModel.response = chatData.IsSuccess ? chatData.ChatData : chatData.Exception;
+                    chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
                     msg = chatRecordModel.response;
                 }
                 else
@@ -157,19 +158,37 @@ namespace FastKMSWeb.Core.Service
             chatRecordModel.vectorContent = template;
             chatRecordModel.model = AppSetting.NL2SqlModel;
 
-            var promptData = ollamaRepository.Prompt(new PromptModel { content = template, model = AppSetting.NL2SqlModel });
+            var chat = ollamaRepository.Chat(new ChatModel { content = template, model = AppSetting.NL2SqlModel });
 
-            if (promptData.PromptData.IndexOf("```sql") >= 0)
-                promptData.PromptData = promptData.PromptData.Substring(promptData.PromptData.IndexOf("```sql"), promptData.PromptData.Length - promptData.PromptData.IndexOf("```sql"));
-            if (promptData.PromptData.LastIndexOf("```") >= 0)
-                promptData.PromptData = promptData.PromptData.Substring(0, promptData.PromptData.LastIndexOf("```"));
+            if (chat.ChatData.IndexOf("```sql") >= 0)
+                chat.ChatData = chat.ChatData.Substring(chat.ChatData.IndexOf("```sql"), chat.ChatData.Length - chat.ChatData.IndexOf("```sql"));
+            if (chat.ChatData.LastIndexOf("```") >= 0)
+                chat.ChatData = chat.ChatData.Substring(0, chat.ChatData.LastIndexOf("```"));
 
-            promptData.PromptData = promptData.PromptData.Replace("```sql", string.Empty).Replace("```", string.Empty).Replace("\n", " ").Replace(";", string.Empty);
-            if (promptData.IsSuccess)
+            chat.ChatData = chat.ChatData.Replace("```sql", string.Empty).Replace("```", string.Empty).Replace("\n", " ").Replace(";", string.Empty);
+            if (chat.IsSuccess)
             {
-                var nl2Data = dataService.NL2Data(dbInfo.Key, promptData.PromptData, dbInfo.TableName, 10, dbInfo.IsView);
-                msg = nl2Data.Count == 0 ? string.Format(AppSetting.ChatResult, message) : nl2Data.ToTable();
-                chatRecordModel.nL2Sql = promptData.PromptData;
+                var nl2Data = dataService.NL2Data(dbInfo.Key, chat.ChatData, dbInfo.TableName, 10, dbInfo.IsView);
+
+                if (nl2Data.Count > 0)
+                {
+                    var data = new List<string>();
+
+                    nl2Data.ForEach(a =>
+                    {
+                        data.Add(JsonConvert.SerializeObject(a));
+                    });
+
+                    var chatData = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel, history = data });
+
+                    chatRecordModel.endTime = DateTime.Now;
+                    chatRecordModel.response = chatData.IsSuccess ? chatData.ChatData : chatData.Exception;
+
+                }
+                else
+                    msg = string.Format(AppSetting.ChatResult, message);
+
+                chatRecordModel.nL2Sql = chat.ChatData;
             }
             else
                 msg = string.Format(AppSetting.ChatResult, message);
