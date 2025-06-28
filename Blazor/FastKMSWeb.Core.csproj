@@ -6,7 +6,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FastElasticsearch.Core" Version="1.2.0" />
+		<PackageReference Include="FastElasticsearch.Core" Version="1.2.3" />
 		<PackageReference Include="FastOllama.Core" Version="1.0.8" />
 		<PackageReference Include="FreeSpire.Presentation" Version="7.8.0" />
 		<PackageReference Include="itext7" Version="9.1.0" />
