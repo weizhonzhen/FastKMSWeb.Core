@@ -1,0 +1,83 @@
+﻿@inject IJSRuntime js
+<div class="pull-left" style="margin-top:-25px;">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="active">
+                <span>共@(pageModel.pageResult.Page.TotalRecord)条</span>
+                <span>@pageModel.pageResult.Page.PageId/@(pageModel.pageResult.Page.TotalPage)页</span>
+            </li>
+            <li @onclick="() => QuerypageId(1)"><a href="#" aria-label="Previous"><span aria-hidden="true">首页</span></a></li>
+            <li @onclick="QueryPre"><a href="#" aria-label="Previous"><span aria-hidden="true">上一页</span></a></li>
+            <li @onclick="QueryNext"><a href="#" aria-label="Next"><span aria-hidden="true">下一页</span></a></li>
+            <li @onclick="QueryLast"><a href="#" aria-label="Previous"><span aria-hidden="true">末页</span></a></li>
+        </ul>
+    </nav>
+</div>
+
+@code {
+    [Parameter]
+    public KmsPageModel pageModel { get; set; } = new KmsPageModel();
+
+    [Parameter]
+    public EventCallback<KmsPageModel> pageModelChanged { get; set; }
+
+    [Parameter]
+    public EventCallback PageEvent { get; set; }
+
+    private bool firstRender { get; set; }
+
+    private void QuerypageId(int i)
+    {
+        pageModel.pageId = i;
+        if (pageModel.pageId < 1)
+            pageModel.pageId = 1;
+        if (pageModel.pageId > pageModel.pageResult.Page.TotalPage)
+            pageModel.pageId = pageModel.pageResult.Page.TotalPage;
+        Init();
+    }
+
+    private void QueryPre()
+    {
+        if (pageModel.pageId <= 1)
+            return;
+        pageModel.pageId--;
+        if (pageModel.pageId < 1)
+            pageModel.pageId = 1;
+        Init();
+    }
+
+    private void QueryLast()
+    {
+        pageModel.pageId = pageModel.pageResult.Page.TotalPage;
+        Init();
+    }
+
+    private void QueryNext()
+    {
+        if (pageModel.pageId >= pageModel.pageResult.Page.TotalPage)
+            return;
+
+        pageModel.pageId++;
+
+        PageEvent.InvokeAsync(pageModel);
+
+        pageModelChanged.InvokeAsync(pageModel);
+    }
+
+    private void Init()
+    {
+        PageEvent.InvokeAsync(pageModel);
+
+        pageModelChanged.InvokeAsync(pageModel);
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+         if (!this.firstRender)
+        {
+            js.InvokeVoidAsync("FnLoad");
+            this.firstRender = true;
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }
+}

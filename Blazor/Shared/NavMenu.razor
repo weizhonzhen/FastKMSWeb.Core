@@ -1,0 +1,54 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">向量知识库</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/index">
+                <span class="oi oi-home" aria-hidden="true"></span> 知识库
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/list">
+                <span class="oi oi-data-transfer-download" aria-hidden="true"></span> 知识库详情
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/business">
+                <span class="oi oi-bullhorn" aria-hidden="true"></span> 业务系统
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/mcp">
+                <span class="oi oi-chat" aria-hidden="true"></span> Mcp
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/chat">
+                <span class="oi oi-chat" aria-hidden="true"></span> 对话
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/agent">
+                <span class="oi oi-flag" aria-hidden="true"></span> 智能体
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

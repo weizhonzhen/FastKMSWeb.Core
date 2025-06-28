@@ -1,0 +1,184 @@
+﻿@page "/list"
+@inject IJSRuntime js
+@inject VectorService vectorService
+@inject IMemoryCache cache
+@inject NavigationManager NavigationManager
+
+<section class="content">
+    <div class="form-inline">
+        <div class="form-group">
+            <div class="form-group" style="width:220px">
+                <label>知识库</label>
+                <select class="form-control" @onchange="SelectChanage" id="kmsSelect" style="width:160px;">
+                    <option value="">请选择</option>
+                    @foreach (var item in KmsService.GetKmsList())
+                    {
+                        <option value="@item.vectorIndex">@item.name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <button @onclick="()=>Query()" class="btn btn-primary">查询</button>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:10px;" class="box-body table-responsive">
+        <table id="kmsTable" class="table table-bordered TableList">
+            <thead style="background-color:#cacaca;">
+                <tr>
+                    <td align="center" width="10%">知识库</td>
+                    <td align="center" width="80%">内容</td>
+                    <td align="center" width="10%">操作</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in pageModel.pageResult.List)
+                {
+                    <tr>
+                        <td align="center" width="10%" style="word-break:break-word">@(item.Keys.First(a => a != AppSetting.FieldKey))</td>
+                        <td align="center" width="80%" style="word-break:break-word">@item.GetValue(AppSetting.FieldKey)</td>
+                        <td align="center" width="10%">
+                            <button class="btn btn-primary btn-sm" @onclick="()=>Update(item)">修改</button>
+                            <button class="btn btn-primary btn-sm" @onclick="()=>DeleteAsync(item)">删除</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <Page @bind-PageModel="pageModel" @bind-PageModel:event="pageModelChanged" PageEvent="()=>PageEvent(pageModel)" />
+    </div>
+</section>
+
+<div style="display:none;overflow:hidden;" id="EditContent">
+    <EditKms @bind-Data="Data" @bind-Data:event="DataChanged" />
+</div>
+
+@code {
+    private OptionModel Data { get; set; } = new OptionModel();
+    private string vectorIndex{ get; set; }
+    private KmsPageModel pageModel { get; set; } = new KmsPageModel() { pageSize=8 };
+
+    protected override void OnParametersSet()
+    {
+        var query = QueryHelpers.ParseQuery(new Uri(NavigationManager.Uri).Query);
+        if (query.ContainsKey("id"))
+            vectorIndex = query["Id"].ToStr();
+        Query();
+        base.OnParametersSet();
+    }
+
+    private void PageEvent(KmsPageModel pageModel)
+    {
+        if (string.IsNullOrEmpty(vectorIndex))
+        {
+            vectorIndex = string.Join(",", KmsService.GetKmsList().Select(b => b.vectorIndex).ToList());
+            pageModel.pageResult = vectorService.GetPage(vectorIndex, pageModel.pageId, pageModel.pageSize) ?? new PageResult();
+        }
+        else
+            pageModel.pageResult = vectorService.GetPage(vectorIndex, pageModel.pageId, pageModel.pageSize) ?? new PageResult();
+    }
+
+    private void Update(Dictionary<string, object> dic)
+    {
+        var json = JsonConvert.SerializeObject(dic);
+        Data = JsonConvert.DeserializeObject<OptionModel>(json);
+        Data.name = dic.Keys.First(a => a != AppSetting.FieldKey);
+
+        cache.Set("IsShow", true);
+    }
+
+    private async Task DeleteAsync(Dictionary<string, object> dic)
+    {
+        await js.InvokeVoidAsync("FnLoading");
+        var result = vectorService.DeleteVectorItem(dic);
+        if (result.IsSuccess)
+        {
+            await js.InvokeVoidAsync("FnMsg",new object[] { "删除成功"});
+            Query();
+        }
+        else
+            await js.InvokeVoidAsync("FnMsg", new object[] { "删除失败：" + result.Exception.Message });
+    }
+
+    private void Query()
+    {
+        pageModel.pageId = 1;
+        if (string.IsNullOrEmpty(vectorIndex))
+        {
+            vectorIndex = string.Join(",", KmsService.GetKmsList().Select(b => b.vectorIndex).ToList());
+            pageModel.pageResult = vectorService.GetPage(vectorIndex, pageModel.pageId, pageModel.pageSize) ?? new PageResult();
+        }
+        else
+            pageModel.pageResult = vectorService.GetPage(vectorIndex, pageModel.pageId, pageModel.pageSize) ?? new PageResult();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await js.InvokeVoidAsync("FnChange", new object[] { vectorIndex });
+        await js.InvokeVoidAsync("FnLoad");
+        base.OnAfterRender(firstRender);
+    }
+
+    private void SelectChanage(ChangeEventArgs e)
+    {
+        vectorIndex = e.Value.ToStr();
+        Query();
+    }
+}
+
+<script>
+    $(function () {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    });
+
+    function FnMsg(msg)
+    {
+        layer.msg(msg);
+        layer.closeAll('loading');
+    }
+
+    function FnReload()
+    {
+        parent.layer.closeAll('iframe');
+        window.location.reload();
+    }
+
+    function FnLoad()
+    {
+        $("#kmsTable tbody tr").first().click();
+        $.TableClickColor("kmsTable");
+    }
+
+    function FnPageNum(id) {
+        $(".pagination li a").each(function () {
+            if ($(this).attr("aria-label") == undefined)
+                return;
+            if ($(this).is(id))
+                $(this).parent().addClass("active");
+            else
+                $(this).parent().removeClass("active");
+        });
+    }
+
+    function FnEdit(title)
+    {
+        layer.open({
+            type: 1,
+            area: ['760px', '450px'],
+            fixed: true, maxmin: false,
+            content:  $('#EditContent'),
+            title: "编辑 - " + title
+        });
+    }
+
+    function FnLoading()
+    {
+        layer.load(2);
+    }
+
+    function FnChange(id)
+    {        
+        $('#kmsSelect').val(id);
+    }
+</script>
