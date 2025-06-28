@@ -37,7 +37,8 @@ const data = ref({
     Name:'',
     Remark:'',
 });
-async function submit()
+
+const submit = async ()=>
 {
     if(selectedFile.value == null)
     {
@@ -64,7 +65,7 @@ async function submit()
     });
 }
 
-function upload(event)
+const upload = (event) =>
 {
    data.value.Name = event.target.files[0].name;
    data.value.Remark = event.target.files[0].name;

@@ -62,14 +62,14 @@ async function pageEvent(page)
     tableClickColor('#kmsTable');
 }
 
-async function LoadData()
+const LoadData = async ()=>
 {
     isShow.value = false;
     await kmsPage(1,10).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');
 }
 
-async function Delete(item)
+const Delete = async (item)=>
 {    
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });    
     let formData = new FormData();
@@ -87,7 +87,7 @@ async function Delete(item)
     tableClickColor('#kmsTable');
 }
 
-function AddKms()
+const AddKms=()=>
 {    
     isShow.value=true;
 }

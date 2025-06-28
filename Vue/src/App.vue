@@ -16,7 +16,6 @@ import NavMenu from './components/NavMenu.vue'
     </main>
 </div>
 </template>
-
 <style scoped>
 .page {
     position: relative;

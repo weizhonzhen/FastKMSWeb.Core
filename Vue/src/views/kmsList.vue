@@ -4,7 +4,7 @@
         <div class="form-group">
             <div class="form-group" style="width:320px">
                 <label>知识库</label>
-                <select class="form-control" v-model="selectedValue" v-on:change="selectChanage" id="kmsSelect">
+                <select class="form-control" v-model="selectedValue" v-on:change="selectChanage" id="kmsSelect"  style="width:160px;">
                     <option value="">请选择</option>
                     <option v-for="item in kmsData" :value='item.vectorIndex'>{{ item.name }}</option>
                 </select>
@@ -93,7 +93,7 @@ async function pageEvent(page)
     tableClickColor('#kmsTable');
 }
 
-async function selectChanage(event) 
+const selectChanage = async (event) =>
 {        
     if(event.target.value !='')
     {
@@ -110,7 +110,7 @@ async function selectChanage(event)
     tableClickColor('#kmsTable');
 }
 
-async function Delete(item)
+const Delete = async (item)=>
 {       
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });
     
@@ -129,7 +129,7 @@ async function Delete(item)
     tableClickColor('#kmsTable');
 }
 
-function Update(item)
+const Update = (item) =>
 {   
     isShow.value = true;
      item.isShow = isShow;

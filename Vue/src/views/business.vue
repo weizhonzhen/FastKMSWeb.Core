@@ -75,7 +75,7 @@ async function pageEvent(page)
     query(page.pageId,page.pageSize);
 }
 
-async function query(pageId,pageSize)
+const query = async (pageId,pageSize)=>
 {
     if(isView)
         await viewList(key,pageId,pageSize).then(res=>{ pageData.value=res.data});
@@ -88,7 +88,7 @@ async function query(pageId,pageSize)
         columnData.value = [];
 }
 
-function selectChanage(event)
+const selectChanage=(event)=>
 {
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });   
     key = event.target.value;
@@ -96,7 +96,7 @@ function selectChanage(event)
     loading.close();
 }
 
-function typeChanage(event)
+const typeChanage=(event)=>
 {
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });   
     isView = event.target.value== "1" ? false : true;
@@ -104,7 +104,7 @@ function typeChanage(event)
     loading.close();
 }
 
-async function showColumn(item)
+const showColumn = async(item)=>
 {
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });   
     tableName = item.tabName;
@@ -112,7 +112,7 @@ async function showColumn(item)
     loading.close();
 }
 
-  async function updateTable(item)
+const updateTable = async(item)=>
   {
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });   
     let data = new Object();

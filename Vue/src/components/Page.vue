@@ -49,7 +49,7 @@ onBeforeUpdate(() => {
   props.page.listPage = initPageId(props.page);
 });  
 
- function queryPageId (i) {
+ const queryPageId = (i)=> {
       props.page.pageId = i;
       if (props.page.pageId < 1)
            props.page.pageId = 1;
@@ -59,7 +59,7 @@ onBeforeUpdate(() => {
       query();
     }
 
-   function queryNext()
+   const queryNext = () =>
     {    
        if (props.page.pageId >= props.page.totalPage)
            return;
@@ -68,7 +68,7 @@ onBeforeUpdate(() => {
       query();
     }
 
-    function queryPre()
+    const queryPre = () =>
     {
       if (props.page.pageId <= 1)
           return;
@@ -80,13 +80,13 @@ onBeforeUpdate(() => {
       query();
     }
 
-    function queryLast()
+    const queryLast = () =>
     {
       props.page.pageId = props.page.totalPage;
       query();
     }
 
-    function query()
+    const query = () =>
     {
       emit('update:page', {
           totalRecord: props.page.totalRecord,

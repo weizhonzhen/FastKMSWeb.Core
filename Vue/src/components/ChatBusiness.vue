@@ -73,7 +73,7 @@ onMounted(async () => {
     await dataList().then(res=>{dataConfig.value=res.data;});
 }); 
 
-async function Send()
+const Send = async () =>
 {   
     if(message.value == '')
     {  
@@ -103,14 +103,14 @@ async function Send()
     });
 }
 
-function Close()
+const Close = () =>
 {
   if(props.data.query!=undefined)
       props.data.query();
    props.data.isShow =false;
 }
 
-async function DbChange()
+const DbChange = async () =>
 {
   if(props.data.dbInfo.isView)
      await viewList(props.data.dbInfo.key,1,pageSize).then(res=>{ props.data.tableList = res.data});
@@ -118,7 +118,7 @@ async function DbChange()
     await tableList(props.data.dbInfo.key,1,pageSize).then(res=>{ props.data.tableList = res.data});
 }
 
-async function TypeChanage()
+const TypeChanage = async ()=>
 {  
   if(props.data.dbInfo.Key == undefined)
   {

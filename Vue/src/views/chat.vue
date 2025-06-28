@@ -76,12 +76,12 @@ async function pageEvent(page)
     tableClickColor('#kmsTable');
 }
 
-async function query() {    
+const query = async () =>{    
     await chatPage(1,10).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');    
 }
 
-function chatKmsWin(title)
+const chatKmsWin = (title)=>
 {  
     var data = new Object();
     data.chatRecord=[];
@@ -95,7 +95,7 @@ function chatKmsWin(title)
    showTitle.value=title;
 }
 
-function chatBusinessWin(title)
+const chatBusinessWin = (title)=>
 {
     var data = new Object();
     data.chatIndex='';
@@ -111,7 +111,7 @@ function chatBusinessWin(title)
    showTitle.value=title;
 }
 
-async function Delete(item)
+const Delete = async (item)=>
 {        
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });    
     let formData = new FormData();
@@ -129,7 +129,7 @@ async function Delete(item)
     tableClickColor('#kmsTable');
 }
 
-async function Option(item)
+const Option = async (item)=>
 {
     let data = new Object();
     let pageSize = 999;

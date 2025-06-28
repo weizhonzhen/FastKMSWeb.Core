@@ -38,7 +38,8 @@ const props = defineProps({
 const pageEvent = inject("pageEvent");
 const emit = defineEmits(['update:page'],['update:list']);
 
- function queryPageId (i) {
+ const queryPageId = (i) => 
+ {
       props.page.pageId = i;
       if (props.page.pageId < 1)
            props.page.pageId = 1;
@@ -48,7 +49,7 @@ const emit = defineEmits(['update:page'],['update:list']);
       query();
     }
 
-   function queryNext()
+   const queryNext = ()=>
     {    
        if (props.page.pageId >= props.page.totalPage)
            return;
@@ -57,7 +58,7 @@ const emit = defineEmits(['update:page'],['update:list']);
       query();
     }
 
-    function queryPre()
+    const queryPre = () =>
     {
       if (props.page.pageId <= 1)
           return;
@@ -69,13 +70,13 @@ const emit = defineEmits(['update:page'],['update:list']);
       query();
     }
 
-    function queryLast()
+    const queryLast = ()=>
     {
       props.page.pageId = props.page.totalPage;
       query();
     }
 
-    function query()
+    const query = ()=>
     {
       emit('update:page', {
           totalRecord: props.page.totalRecord,

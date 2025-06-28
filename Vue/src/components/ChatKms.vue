@@ -47,14 +47,14 @@ onMounted(async () => {
     await kmsList().then(res=>{kmsData.value=res.data});
 }); 
 
-function Close()
+const Close = () =>
 {
     if(props.data.query!=undefined)
         props.data.query();
     props.data.isShow =false;
 }
 
-async function Send()
+const Send = async () =>
 {
     if(message.value == '')
     {  

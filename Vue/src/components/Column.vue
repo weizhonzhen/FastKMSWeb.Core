@@ -61,7 +61,7 @@ onUpdated(() => {
         tableClickColor('#columnTable');
 }); 
 
-async function UpdateColumn(item)
+const UpdateColumn =  async (item) =>
 {
     if(item.colComments == '')
     {

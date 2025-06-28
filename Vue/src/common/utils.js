@@ -1,7 +1,7 @@
-export function tableClickColor(id) {
+export const tableClickColor = (id) => {
     document.querySelectorAll(id + ' tr').forEach(element=>
     {        
-        element.addEventListener('click', function() {
+        element.addEventListener('click', () => {
             document.querySelectorAll(id + ' tbody tr:nth-child(odd)').forEach(tr => {
                 if(element == tr)
                     element.style.backgroundColor ="#6CC2CC";
@@ -20,7 +20,7 @@ export function tableClickColor(id) {
     document.querySelector(id + ' tbody tr').click();
 }
 
-export function initPageId(page)
+export const initPageId = (page) =>
 {
     let listPage = [];
     let startId = (page.pageId - 6) <= 0 ? 1 : (page.pageId - 6);

@@ -37,7 +37,7 @@ const props = defineProps({
     }
 });
 
-async function Submit()
+const Submit = async () =>
 {
     let formData = new FormData();
     formData.append('name', Object.keys(props.data)[0]); 
