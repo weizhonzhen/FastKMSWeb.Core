@@ -121,9 +121,9 @@ const Delete = async (item)=>
     await vectorDelete(formData).then(res=>{
         loading.close();
         if(res.data.isSuccess)
-            ElMessage({message: '删除成功',type: 'success'});
+            ElMessage.success('删除成功');
         else
-            ElMessage({message: '删除失败',type: 'warning'});
+            ElMessage.error('删除失败');
     });      
     await vectorPage(vectorIndex.join(),1,pageSize).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');

@@ -65,7 +65,7 @@ const UpdateColumn =  async (item) =>
 {
     if(item.colComments == '')
     {
-        ElMessage({message: '备注不能为空',type: 'warning'});
+        ElMessage.error('备注不能为空');
         return;
     }
     
@@ -84,9 +84,9 @@ const UpdateColumn =  async (item) =>
     await colUpdate(formData).then(res=>{
         loading.close();
         if(res.data.isSuccess)
-                ElMessage({message: "操作成功",type: 'success'});
+                ElMessage.success("操作成功");
             else
-                ElMessage({message: "操作失败",type: 'warning'});
+                ElMessage.error("操作失败");
         });
 }
 </script>

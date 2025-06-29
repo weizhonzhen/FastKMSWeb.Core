@@ -77,13 +77,13 @@ const Send = async () =>
 {   
     if(message.value == '')
     {  
-        ElMessage({message: "内容不能为空",type: 'warning'});
+        ElMessage.error("内容不能为空");
         return;
     }
 
     if(props.data.dbInfo.tableName == undefined || props.data.dbInfo.tableName == '' )
     {
-        ElMessage({message: "表不能为空",type: 'warning'});
+        ElMessage.error("表不能为空");
         return;
     }
 
@@ -122,7 +122,7 @@ const TypeChanage = async ()=>
 {  
   if(props.data.dbInfo.Key == undefined)
   {
-      ElMessage({message: "数据库不能为空",type: 'warning'});
+      ElMessage.error("数据库不能为空");
       return;
   }
 

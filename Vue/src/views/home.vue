@@ -1,9 +1,32 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { RouterView,useRouter } from 'vue-router'
+import NavMenu from '../components/NavMenu.vue'
+import axiosInstance from '@/api/axiosInstance'
+
+const router = useRouter();
+const loginOut= async()=>{
+   axiosInstance.post('/check/loginOut').then(res=>{
+     localStorage.removeItem('token');
+     router.push('/login');
+   });
+}
 </script>
 
 <template>
-    <RouterView />
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+    <main>
+        <div class="top-row px-4" style="color:blue;justify-content:normal;width: 100%;">
+            <lable style="width:95%">向量知识库采用 Elasticsearch + Ollama</lable>
+            <lable style="width:5%;"><button class="btn btn-primary btn-sm" @click="loginOut">退出</button></lable>            
+        </div>
+        <article class="content px-4">
+             <RouterView />
+        </article>
+    </main>
+</div>
 </template>
 <style scoped>
 .page {
@@ -76,5 +99,4 @@ main {
         padding-right: 1.5rem !important;
     }
 }
-
 </style>

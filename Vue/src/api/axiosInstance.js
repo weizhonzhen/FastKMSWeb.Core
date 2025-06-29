@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:5239/api/', 
-  timeout: 60000, 
+  timeout: 60000,
 });
 
 axiosInstance.interceptors.request.use(
@@ -19,15 +19,24 @@ axiosInstance.interceptors.request.use(
 );
 
 axiosInstance.interceptors.response.use(
-  response => {
-    
-
+   response => {
     return response;
   },
-  error => {    
-    console.log(error);    
-    return Promise.reject(error);
+  error => {
+    if (error.response) {
+      switch (error.response.state) {
+        case 401:
+           window.location.href = "/login";
+        default:
+          return Promise.reject(error.response.data); 
+      }
+    } else 
+     {    
+           window.location.href = "/login";
+          return Promise.reject(error.response.data); 
+     }
   }
 );
+
 
 export default axiosInstance;

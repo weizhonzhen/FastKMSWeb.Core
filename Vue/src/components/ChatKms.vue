@@ -58,13 +58,13 @@ const Send = async () =>
 {
     if(message.value == '')
     {  
-        ElMessage({message: "内容不能为空",type: 'warning'});
+        ElMessage.error("内容不能为空");
         return;
     }
 
     if(props.data.kms == undefined || props.data.kms.length == 0)
     {  
-        ElMessage({message: "知识库不能为空",type: 'warning'});
+        ElMessage.error("知识库不能为空");
         return;
     }
 

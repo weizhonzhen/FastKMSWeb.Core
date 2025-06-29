@@ -123,9 +123,9 @@ const updateTable = async(item)=>
     await tabUpdate(data).then(res=>{
         loading.close();
         if(res.data.isSuccess)
-            ElMessage({message: "操作成功",type: 'success'});
+            ElMessage.success("操作成功");
         else
-            ElMessage({message: "操作失败",type: 'warning'});        
+            ElMessage.error("操作失败");        
     });        
   }
 </script>

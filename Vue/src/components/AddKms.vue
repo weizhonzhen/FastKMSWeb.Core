@@ -1,31 +1,18 @@
 <template>
-    <table class="table table-bordered TableList">
-    <tbody>
-        <tr>
-            <td width="10%" valign="middle"><label>名称：</label></td>
-            <td>
-                 <el-input type="text" v-model="data.Name" clearable />
-            </td>
-        </tr>
-        <tr>
-            <td width="10%" valign="middle"><label>备注：</label></td>
-            <td>
-                <el-input type="textarea" v-model="data.Remark" rows="4" clearable></el-input>
-            </td>
-        </tr>
-        <tr>
-            <td width="10%" valign="middle"><label>文件：</label></td>
-            <td><input type="file" class="form-control"  v-on:change="upload"  accept=".xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff,.ppt,.pptx" />
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" align="center">
-                <button class="btn btn-primary" @click="submit">提交</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
+ <div>
+    <el-form ref="dataref" :model="data"  :rules="rules">      
+      <el-form-item label="名称">
+        <el-input type="text" v-model="data.Name" />
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input type="textarea" v-model="data.Remark" rows="4" />
+      </el-form-item>  
+      <el-form-item label="文件">
+        <input type="file" class="form-control"  v-on:change="upload"  accept=".xls,.txt,.json,.xlsx,.pdf,.doc,.docx,.jpeg,.png,.jpg,.bmp,.tiff,.ppt,.pptx" />    
+      </el-form-item>
+      <el-button style="margin-left: 400px;" @click="submit" class="btn btn-primary">提交</el-button>
+    </el-form>
+  </div>
 </template>
 <script setup>
 import { ElMessage,ElLoading,ElInput  } from 'element-plus'
@@ -38,11 +25,16 @@ const data = ref({
     Remark:'',
 });
 
+const rules = ref({
+  Remark: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  Name: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+})
+
 const submit = async ()=>
 {
     if(selectedFile.value == null)
     {
-        ElMessage({message: "请选择文件",type: 'warning'});
+        ElMessage.error("请选择文件");
         return;
     }
 
@@ -55,9 +47,9 @@ const submit = async ()=>
     await kmsUploadFile(formData).then(res=>{        
         loading.close();
         if(res.data.success)
-            ElMessage({message: res.data.msg,type: 'success'});
+            ElMessage.success(res.data.msg);
         else
-            ElMessage({message: res.data.msg,type: 'warning'});
+            ElMessage.error(res.data.msg);
 
         data.value.Name = '';
         data.value.Remark = '';

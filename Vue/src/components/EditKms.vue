@@ -1,26 +1,18 @@
 <template>
-    <table class="table table-bordered TableList"> 
-        <tbody> 
-            <tr>  
-                <td align="right" width="10%" valign="middle"><label>名称：</label></td> 
-                <td>{{ Object.keys(props.data)[0] }}</td>
-            </tr>  
-            <tr>  
-                <td align="right" width="10%" valign="middle"><label>内容：</label></td> 
-                <td>
-                    <el-input type="textarea" v-model="props.data.text" rows="12" />
-                </td> 
-            </tr> 
-            <tr> 
-                <td align="center" colspan="2"> 
-                    <button @click="Submit" class="btn btn-primary">提交</button>
-                </td> 
-            </tr> 
-        </tbody> 
-    </table>
+  <div>
+    <el-form :model="props.data">      
+      <el-form-item label="名称">
+        <el-text>{{ Object.keys(props.data)[0] }}</el-text>
+      </el-form-item>
+      <el-form-item label="内容">
+        <el-input type="textarea" v-model="props.data.text" rows="12" />
+      </el-form-item>
+      <el-button style="margin-left: 400px;" @click="submit" class="btn btn-primary">提交</el-button>
+    </el-form>
+  </div>
 </template>
 <script setup>
-import { ElMessage,ElLoading  ,ElInput} from 'element-plus'
+import { ElMessage,ElLoading} from 'element-plus'
 import { defineProps,defineEmits} from 'vue'
 import { kmsUpdate} from '@/api/kmsApi'
 const props = defineProps({
@@ -37,7 +29,7 @@ const props = defineProps({
     }
 });
 
-const Submit = async () =>
+const submit = async () =>
 {
     let formData = new FormData();
     formData.append('name', Object.keys(props.data)[0]); 
@@ -49,9 +41,9 @@ const Submit = async () =>
     await kmsUpdate(formData).then(res=>{
         loading.close();
         if(res.data.isSuccess)
-            ElMessage({message: "操作成功",type: 'success'});
+            ElMessage.success("操作成功");
         else
-            ElMessage({message: "操作失败",type: 'warning'});
+            ElMessage.error("操作失败");
         props.data.isShow = false;        
     });
 }
