@@ -2,11 +2,13 @@
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 
 namespace FastKMSApi.Core.Controllers
 {
+    [Authorize]
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class dataController : ControllerBase

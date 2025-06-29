@@ -50,13 +50,22 @@ namespace FastKMSApi.Core.Service
             return config.GetSection(key).Value;
         }
 
-        internal static List<T> GetConfig<T>(string key, string fileName = "db.json") where T : class, new()
+        internal static List<T> ConfigList<T>(string key, string fileName = "db.json") where T : class, new()
         {
             var build = new ConfigurationBuilder();
             build.SetBasePath(Directory.GetCurrentDirectory());
             build.AddJsonFile(fileName, optional: true, reloadOnChange: true);
             var config = build.Build();
             return new ServiceCollection().AddOptions().Configure<List<T>>(config.GetSection(key)).BuildServiceProvider().GetService<IOptions<List<T>>>().Value;
+        }
+
+        internal static T Config<T>(string key, string fileName = "db.json") where T : class, new()
+        {
+            var build = new ConfigurationBuilder();
+            build.SetBasePath(Directory.GetCurrentDirectory());
+            build.AddJsonFile(fileName, optional: true, reloadOnChange: true);
+            var config = build.Build();
+            return new ServiceCollection().AddOptions().Configure<T>(config.GetSection(key)).BuildServiceProvider().GetService<IOptions<T>>().Value;
         }
 
         internal static Dictionary<string, object> JsonToDic(this string jsonValue, bool isString = false)

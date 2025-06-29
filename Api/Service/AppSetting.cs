@@ -1,4 +1,5 @@
 ﻿using FastKMSApi.Core.Model;
+using System.Collections.Concurrent;
 
 namespace FastKMSApi.Core.Service
 {
@@ -19,12 +20,16 @@ namespace FastKMSApi.Core.Service
 
         public static readonly string LLmModel = Extension.GetConfig("LLmModel");
 
-        public static readonly List<DataConfig> DataConfig = Extension.GetConfig<DataConfig>("DataConfig");
+        public static readonly List<DataConfig> DataConfig = Extension.ConfigList<DataConfig>("DataConfig");
 
         public static readonly string NL2SqlModel = Extension.GetConfig("NL2SqlModel");
 
         public static readonly string NL2SqlTemplate = Extension.GetConfig("NL2SqlTemplate");
 
-        public static readonly string ChatResult = Extension.GetConfig("ChatResult");  
+        public static readonly string ChatResult = Extension.GetConfig("ChatResult");
+
+        public static readonly JwtModel Jwt = Extension.Config<JwtModel>("Jwt");
+
+        public static ConcurrentDictionary<string, object> User { get; set; } = new ConcurrentDictionary<string, object>();
     }
 }

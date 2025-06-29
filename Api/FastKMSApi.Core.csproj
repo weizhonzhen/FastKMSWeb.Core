@@ -6,11 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-	<ItemGroup>		
+	<ItemGroup>
 		<PackageReference Include="FastElasticsearch.Core" Version="1.2.3" />
 		<PackageReference Include="FastOllama.Core" Version="1.0.8" />
 		<PackageReference Include="FreeSpire.Presentation" Version="9.3.0" />
 		<PackageReference Include="itext7" Version="9.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
 		<PackageReference Include="MySql.Data" Version="9.3.0" />
 		<PackageReference Include="NPOI" Version="2.7.3" />
 		<PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.8.0" />

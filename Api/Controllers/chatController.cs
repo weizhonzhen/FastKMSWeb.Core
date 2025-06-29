@@ -3,6 +3,7 @@ using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NPOI.SS.Util;
@@ -10,6 +11,7 @@ using NPOI.SS.Util;
 namespace FastKMSApi.Core.Controllers
 {
     [Route("api/[controller]/[action]")]
+    [Authorize]
     [ApiController]
     public class chatController : ControllerBase
     {

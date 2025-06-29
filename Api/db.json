@@ -11,7 +11,7 @@
   "LLmModel": "qwen2.5:7b",
   "ChatResult": "未找到[{0}]相关信息",
   "NL2SqlModel": "qwen2.5-coder:7b",
-  "NL2SqlTemplate": "### 任务\n生成一个 SQL 查询来回答 [问题]{0}[/问题]\n\n### 数据库架构\n该查询将在具有以下架构的数据库上运行：\n{1}\n### 答案\n鉴于数据库架构，这是 SQL 查询，用于 [问题]{0}[/问题]",
+  "NL2SqlTemplate": "### 任务\n生成一个{2} SQL 查询来回答 [问题]{0}[/问题]\n\n### 数据库架构\n该查询将在具有以下架构的数据库上运行：\n{1}\n### 答案\n鉴于数据库架构，这是{2} SQL 查询，用于 [问题]{0}[/问题]",
   "DataConfig": [
     {
       "ProviderName": "Oracle.ManagedDataAccess",
@@ -25,11 +25,17 @@
     {
       "ProviderName": "MySql.Data",
       "DbType": "MySql",
-      "ConnStr": "Server=127.0.0.1;Port=3306;Database=xzuserdb;Uid=root;Pwd=root;",
+      "ConnStr": "Server=127.0.0.1;Port=3306;Database=test;Uid=root;Pwd=root;",
       "Flag": "@",
       "FactoryClient": "MySql.Data.MySqlClient.MySqlClientFactory",
       "Key": "dbName",
       "Schema": "dbName"
     }
-  ]
+  ],
+  "Jwt": {
+    "key": "amin~!##D#(*)*&^*()amin~!##D#(*)*&^*()amin~!##D#(*)*&^*()amin~!##D#(*)*&^*()",
+    "Issuer": "kms",
+    "Audience": "kms",
+    "Expires": 7200
+  }
 }

@@ -1,8 +1,7 @@
-using FastKMSApi.Core;
 using FastKMSApi.Core.Aop;
+using FastKMSApi.Core.Jwt;
 using FastKMSApi.Core.Service;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +27,8 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddJwt();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -35,6 +36,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 
 app.UseExceptionHandler(error =>
 {
@@ -48,7 +50,9 @@ app.UseExceptionHandler(error =>
     });
 });
 
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseJwt();
 
 app.MapControllers();
 

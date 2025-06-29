@@ -2,10 +2,12 @@
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FastKMSApi.Core.Controllers
 {
+    [Authorize]
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class vectorController : ControllerBase
