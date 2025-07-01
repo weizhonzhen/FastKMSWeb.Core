@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
@@ -8,25 +9,24 @@ using Newtonsoft.Json;
 
 namespace FastKMSApi.Core.Service
 {
-    public class ChatService
+    public class ChatService : IChatService
     {
-        private readonly IElasticsearchVector elasticsearchVector;
-        private readonly IElasticsearch elasticsearch;
-        private readonly IFastOllamaRepository ollamaRepository;
-        private readonly DataService dataService;
-        public ChatService(IElasticsearchVector _elasticsearchVector, IFastOllamaRepository _ollamaRepository
-                            , IElasticsearch _elasticsearch, DataService _dataService)
-        {
-            elasticsearchVector = _elasticsearchVector;
-            ollamaRepository = _ollamaRepository;
-            elasticsearch = _elasticsearch;
-            dataService = _dataService;
-        }
+        [Autowired]
+        public readonly IElasticsearchVector elasticsearchVector;
 
+        [Autowired]
+        private readonly IElasticsearch elasticsearch;
+
+        [Autowired]
+        private readonly IFastOllamaRepository ollamaRepository;
+
+        [Autowired]
+        private readonly IDataService dataService;
+ 
         public string Chat(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null)
-        {         
+        {
             var msg = string.Empty;
-            var chatRecordModel = new ChatRecordModel {beginTime = DateTime.Now, request = message };
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = message };
             var field = new List<float>();
             var lLMResponse = ollamaRepository.Embed(new EmbedModel { content = { message } });
             if (lLMResponse.IsSuccess && lLMResponse.EmbedData.Count > 0)
@@ -54,7 +54,7 @@ namespace FastKMSApi.Core.Service
                     chatRecordModel.vectorContent = string.Join("\n\r", content);
                     chatRecordModel.model = AppSetting.LLmModel;
 
-                    var chat = ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = message, model = AppSetting.LLmModel,history= content });
+                    var chat = ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = message, model = AppSetting.LLmModel, history = content });
 
                     chatRecordModel.endTime = DateTime.Now;
                     chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
@@ -74,7 +74,7 @@ namespace FastKMSApi.Core.Service
             }
 
             AddChatRecord(chatRecordModel, chatIndex, message, kmsModel);
-          
+
             return msg;
         }
 
@@ -143,7 +143,7 @@ namespace FastKMSApi.Core.Service
         public string NL2Sql(string message, DbInfo dbInfo, string chatIndex)
         {
             var msg = string.Empty;
-            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now};
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now };
             var config = AppSetting.DataConfig.Find(a => a.key == dbInfo.key);
             var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(dbInfo.key, dbInfo.tableName), config.dbType);
 
@@ -203,7 +203,7 @@ namespace FastKMSApi.Core.Service
 
             if (index.IndexOf("chat") < 0)
                 index = $"chat-{index}";
-            
+
             return index;
         }
 
@@ -250,5 +250,16 @@ namespace FastKMSApi.Core.Service
             else
                 return result;
         }
+    }
+
+    public interface IChatService
+    {
+        string Chat(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null);
+        string NL2Sql(string message, DbInfo dbInfo, string chatIndex);
+        PageResult Page(RequestPage page);
+        EsResponse GetChatRecord(ChatInfo model);
+        EsResponse DeleteChatRecord(Dictionary<string, object> dic, string _id);
+        EsResponse DeleteChat(Dictionary<string, object> dic);
+        string ChatIndex(string index);
     }
 }

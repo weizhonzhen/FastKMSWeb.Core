@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
@@ -8,18 +9,16 @@ using Newtonsoft.Json;
 
 namespace FastKMSApi.Core.Service
 {
-    public class VectorService
+    public class VectorService : IVectorService
     {
+        [Autowired]
         private readonly IElasticsearchVector elasticsearchVector;
+
+        [Autowired]
         private readonly IElasticsearch elasticsearch;
+
+        [Autowired]
         private readonly IFastOllamaRepository ollamaRepository;
-        public VectorService(IElasticsearchVector _elasticsearchVector, IFastOllamaRepository _ollamaRepository
-                            , IElasticsearch _elasticsearch)
-        {
-            elasticsearchVector = _elasticsearchVector;
-            ollamaRepository = _ollamaRepository;
-            elasticsearch = _elasticsearch;
-        }
 
         public EsResponse AddVectorData(Dictionary<string, object> data, Model.KmsModel kmsModel)
         {
@@ -129,5 +128,15 @@ namespace FastKMSApi.Core.Service
             else
                 return new EsResponse { Exception = new Exception(lLMResponse.Exception) };;
         }
+    }
+
+    public interface IVectorService
+    {
+        EsResponse AddVectorData(Dictionary<string, object> data, Model.KmsModel kmsModel);
+        EsResponse CreateVector(Model.KmsModel kmsModel, VectorModel vectorModel);
+        EsResponse DeleteVector(vectorModel model);
+        PageResult GetPage(RequestPage page);
+        EsResponse DeleteVectorItem(Request.OptionModel item);
+        EsResponse UpdateVectorItem(Request.OptionModel item);
     }
 }

@@ -5,8 +5,7 @@ using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using NPOI.SS.Util;
+using FastAop.Core;
 
 namespace FastKMSApi.Core.Controllers
 {
@@ -15,19 +14,17 @@ namespace FastKMSApi.Core.Controllers
     [ApiController]
     public class chatController : ControllerBase
     {
-        private readonly DataService dataService;
-        private readonly VectorService vectorService;
-        private readonly ChatService chatService;
-        private readonly IElasticsearch elasticsearch;
+        [Autowired]
+        private readonly IDataService dataService;
 
-        public chatController(DataService dataService, VectorService vectorService,
-                            ChatService chatService, IElasticsearch elasticsearch)
-        {
-            this.dataService = dataService;
-            this.vectorService = vectorService;
-            this.chatService = chatService;
-            this.elasticsearch = elasticsearch;
-        }
+        [Autowired]
+        private readonly IVectorService vectorService;
+
+        [Autowired]
+        private readonly IChatService chatService;
+
+        [Autowired]
+        private readonly IElasticsearch elasticsearch;
 
         [HttpGet]
         public PageResult page([FromQuery] RequestPage page)

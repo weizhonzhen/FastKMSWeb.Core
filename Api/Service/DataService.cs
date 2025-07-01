@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
@@ -8,15 +9,13 @@ using System.Text;
 
 namespace FastKMSApi.Core.Service
 {
-    public class DataService
+    public class DataService: IDataService
     {
         private readonly string tableKey = "TableName";
         private readonly static string dbKey = "DbName";
+
+        [Autowired]
         private readonly IElasticsearch elasticsearch;
-        public DataService(IElasticsearch _elasticsearch)
-        {
-            elasticsearch = _elasticsearch;
-        }
 
         public PageResult TableList(RequestPage page)
         {
@@ -562,5 +561,16 @@ namespace FastKMSApi.Core.Service
 
             return result;
         }
+    }
+
+    public interface IDataService
+    {
+        PageResult TableList(RequestPage page);
+        PageResult ViewList(RequestPage page);
+        List<ColumnInfo> ColumnList(ColumnModel model);
+        bool UpdateColComments(string key, string table, ColumnInfo column, bool isView = false);
+        bool UpdateTabComments(TableModel table);
+        string TableSql(string key, List<string> tableName, bool isView = false);
+        List<Dictionary<string, object>> NL2Data(string key, string sql, List<string> table, int top = 10, bool isView = false);
     }
 }

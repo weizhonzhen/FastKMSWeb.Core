@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
@@ -7,18 +8,16 @@ using Newtonsoft.Json;
 
 namespace FastKMSApi.Core.Service
 {
-    public class KmsService
+    public class KmsService : IKmsService
     {
+        [Autowired]
         private readonly IElasticsearchVector elasticsearchVector;
+
+        [Autowired]
         private readonly IElasticsearch elasticsearch;
+
+        [Autowired]
         private readonly IFastOllamaRepository ollamaRepository;
-        public KmsService(IElasticsearchVector _elasticsearchVector, IFastOllamaRepository _ollamaRepository
-                            , IElasticsearch _elasticsearch)
-        {
-            elasticsearchVector = _elasticsearchVector;
-            ollamaRepository = _ollamaRepository;
-            elasticsearch = _elasticsearch;
-        }
 
         public EsResponse Update(KmsModel model)
         {
@@ -30,7 +29,7 @@ namespace FastKMSApi.Core.Service
             var data = elasticsearch.Page(page.pageSize, page.pageId, AppSetting.KmsIndex,
                  new QueryModel
                  {
-                     //Sort = new Dictionary<string, object> { { nameof(KmsModel.dateTime), "desc" } }
+                     Sort = new Dictionary<string, object> { { nameof(KmsModel.dateTime), "desc" } }
                  });
 
             if (data.IsSuccess)
@@ -57,5 +56,12 @@ namespace FastKMSApi.Core.Service
 
             return list;
         }
+    }
+
+    public interface IKmsService
+    {
+        List<KmsModel> List();
+        PageResult Page(RequestPage page);
+        EsResponse Update(KmsModel model);
     }
 }

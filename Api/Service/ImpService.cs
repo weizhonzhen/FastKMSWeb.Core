@@ -9,7 +9,7 @@ using System.Text;
 
 namespace FastKMSApi.Core.Service
 {
-    public class ImpService
+    public class ImpService : IImpService
     {       
         public async Task<Dictionary<string, object>> ExcelAsync(IFormFile file)
         {
@@ -312,5 +312,15 @@ namespace FastKMSApi.Core.Service
                 return new Dictionary<string, object>();
             }
         }
+    }
+
+    public interface IImpService
+    {
+        Task<Dictionary<string, object>> PptAsync(IFormFile file);
+        Task<Dictionary<string, object>> ImageAsync(IFormFile file);
+        Task<Dictionary<string, object>> WordAsync(IFormFile file);
+        Task<Dictionary<string, object>> TextAync(IFormFile file);
+        Task<Dictionary<string, object>> ExcelAsync(IFormFile file);
+        Task<Dictionary<string, object>> PdfAsync(IFormFile file);
     }
 }

@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
@@ -12,18 +13,15 @@ namespace FastKMSApi.Core.Controllers
     [ApiController]
     public class vectorController : ControllerBase
     {
-        private readonly VectorService vectorService;
+        [Autowired]
+        private readonly IVectorService vectorService;
+
+        [Autowired]
         private readonly IElasticsearchVector elasticsearchVector;
+
+        [Autowired]
         private readonly IElasticsearch elasticsearch;
         
-        public vectorController(VectorService vectorService, IElasticsearchVector elasticsearchVector
-                                , IElasticsearch elasticsearch)
-        {
-            this.vectorService = vectorService;
-            this.elasticsearchVector = elasticsearchVector;
-            this.elasticsearch = elasticsearch;
-        }
-
         [HttpGet]
         public PageResult page([FromQuery] RequestPage page)
         {

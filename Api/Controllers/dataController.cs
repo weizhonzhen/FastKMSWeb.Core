@@ -1,4 +1,5 @@
-﻿using FastElasticsearch.Core.Model;
+﻿using FastAop.Core;
+using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
@@ -13,14 +14,11 @@ namespace FastKMSApi.Core.Controllers
     [ApiController]
     public class dataController : ControllerBase
     {
-        private readonly DataService dataService;
-        private readonly VectorService vectorService;
+        [Autowired]
+        private readonly IDataService dataService;
 
-        public dataController(DataService dataService, VectorService vectorService)
-        {
-            this.dataService = dataService;
-            this.vectorService = vectorService;
-        }
+        [Autowired]
+        private readonly IVectorService vectorService;
 
         [HttpGet]
         public PageResult tableList([FromQuery] RequestPage page)

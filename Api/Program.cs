@@ -1,6 +1,5 @@
 using FastKMSApi.Core.Aop;
 using FastKMSApi.Core.Jwt;
-using FastKMSApi.Core.Service;
 using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,12 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddFastElasticsearch("db.json", new EsAop());
 builder.Services.AddFastOllama("db.json", new OllamaAop());
-builder.Services.AddScoped<ImpService>();
-builder.Services.AddScoped<VectorService>();
-builder.Services.AddScoped<KmsService>();
-builder.Services.AddScoped<ChatService>();
-builder.Services.AddScoped<DataService>();
-builder.Services.AddScoped<AgentService>();
+
+builder.Services.AddFastAop("FastKMSApi.Core.Service", null, ServiceLifetime.Scoped);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

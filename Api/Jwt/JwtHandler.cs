@@ -17,7 +17,7 @@ namespace FastKMSApi.Core.Jwt
                 var filterAction = new List<string> { "login", "loginOut" };
                 var action = context.Request.RouteValues["action"].ToStr();
                 var token = context.Request.Headers.Authorization.Count > 0 ? context.Request.Headers.Authorization[0] : string.Empty;
-                if (AppSetting.User.ContainsKey(token) && !filterAction.Contains(action))
+                if (!AppSetting.User.ContainsKey(token) && !filterAction.Contains(action))
                 {
                     context.Response.StatusCode = 401;
                     return context.Response.WriteAsync(string.Empty);
