@@ -14,7 +14,7 @@
             <td width="10%">{{ colmun.isKey?'是':'否' }}</td>
             <td width="20%">{{ colmun.showType }}</td>
             <td width="50%">
-                <el-input type="text" v-model="colmun.colComments" autocomplete="off" @blur="UpdateColumn(colmun)" clearable/>
+                <el-input type="text" v-model="colmun.colComments" placeholder="请输入备注" autocomplete="off" @blur="UpdateColumn(colmun,$event)" clearable/>
             </td>
         </tr>
     </tbody>
@@ -61,11 +61,11 @@ onUpdated(() => {
         tableClickColor('#columnTable');
 }); 
 
-const UpdateColumn =  async (item) =>
+const UpdateColumn =  async (item,event) =>
 {
     if(item.colComments == '')
     {
-        ElMessage.error('备注不能为空');
+        ElMessage.error(item.colName + ' 备注不能为空');        
         return;
     }
     

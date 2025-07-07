@@ -32,7 +32,7 @@
                 </tr>
             </tbody>
         </table>
-        <page v-model:page="pageData.page" v-model:list="pageData.list"/>
+        <page v-model:data="pageData.page" v-model:list="pageData.list"/>
     </div>
 </section>     
 <el-dialog title="修改知识库" v-model="isShow" :close-on-click-modal="false" :destroy-on-close="true" :close-on-press-escape ="false">
@@ -87,9 +87,9 @@ onMounted(async () => {
     tableClickColor('#kmsTable');   
 });   
 
-async function pageEvent(page)
+async function pageEvent(data)
 {
-    await vectorPage(vectorIndex.join(),page.pageId,page.pageSize).then(res=>{pageData.value=res.data;});  
+    await vectorPage(vectorIndex.join(),data.pageId,data.pageSize).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');
 }
 

@@ -1,6 +1,6 @@
 
-import axiosInstance from '@/api/axiosInstance'
+import http from '@/api/http'
 
-export const vectorPage = (vectorIndex,pageId,pageSize) =>axiosInstance.get(`/vector/page?vectorIndex=${vectorIndex}&pageId=${pageId}&pageSize=${pageSize}`)
+export const vectorPage = (vectorIndex,pageId,pageSize) =>http.get(`/vector/page?vectorIndex=${vectorIndex}&pageId=${pageId}&pageSize=${pageSize}`)
 
-export const vectorDelete = (formData) =>axiosInstance.post('/vector/deleteVector',formData,{headers: {'Content-Type': 'application/json'}});
+export const vectorDelete = (formData) =>http.post('/vector/deleteVector',formData,{headers: {'Content-Type': 'application/json'}});

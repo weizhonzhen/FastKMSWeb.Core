@@ -1,11 +1,11 @@
-﻿using FastElasticsearch.Core;
+﻿using FastAop.Core;
+using FastElasticsearch.Core;
 using FastElasticsearch.Core.Model;
 using FastKMSApi.Core.Model;
 using FastKMSApi.Core.Request;
 using FastKMSApi.Core.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using FastAop.Core;
 
 namespace FastKMSApi.Core.Controllers
 {
@@ -82,6 +82,19 @@ namespace FastKMSApi.Core.Controllers
 
             model.chatIndex = chatService.ChatIndex(model.chatIndex);
             chatService.Chat(model.message, model.kmsModel, model.chatIndex);
+
+            result.Add("IsSuccess", true);
+            result.Add("chatIndex", model.chatIndex);
+            return result;
+        }
+
+        [HttpPost]
+        public Dictionary<string, object> mcp([FromBody] chatMcpModel model)
+        {
+            var result = new Dictionary<string, object>();
+
+            model.chatIndex = chatService.ChatIndex(model.chatIndex);
+            chatService.Mcp(model);
 
             result.Add("IsSuccess", true);
             result.Add("chatIndex", model.chatIndex);

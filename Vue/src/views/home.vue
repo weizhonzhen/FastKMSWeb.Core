@@ -1,11 +1,11 @@
 <script setup>
 import { RouterView,useRouter } from 'vue-router'
 import NavMenu from '../components/NavMenu.vue'
-import axiosInstance from '@/api/axiosInstance'
+import http from '@/api/http'
 
 const router = useRouter();
 const loginOut= async()=>{
-   axiosInstance.post('/check/loginOut').then(res=>{
+   http.post('/check/loginOut').then(res=>{
      localStorage.removeItem('token');
      router.push('/login');
    });

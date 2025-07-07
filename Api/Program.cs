@@ -8,7 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddFastElasticsearch("db.json", new EsAop());
 builder.Services.AddFastOllama("db.json", new OllamaAop());
 
-builder.Services.AddFastAop("FastKMSApi.Core.Service", null, ServiceLifetime.Scoped);
+builder.Services.AddFastAop("FastKMSApi.Core.Service", typeof(ServiceAop), ServiceLifetime.Scoped);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

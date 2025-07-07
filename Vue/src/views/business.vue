@@ -28,12 +28,12 @@
                 <tr v-for="table in pageData.list" @click="showColumn(table)">
                     <td width="50%">{{ table.tabName }}</td>
                     <td width="50%">
-                        <el-input type="text" v-model="table.tabComments" autocomplete="off" @blur="updateTable(table)" clearable/>
+                        <el-input type="text" v-model="table.tabComments" placeholder="请输入备注" autocomplete="off" @blur="updateTable(table)" clearable/>
                     </td>
                 </tr>
             </tbody>
         </table>
-        <MinPage v-model:page="pageData.page" v-model:list="pageData.list"/>
+        <MinPage v-model:data="pageData.page" v-model:list="pageData.list"/>
     </div>
     <div style="margin-top:10px;float:left;width:68%;margin-left:10px;height:800px;overflow-y:scroll;">
         <Column v-model:list="columnData" :table-name="tableName" :is-view="isView" :db-key="key"/>
@@ -70,9 +70,9 @@ onMounted(async () => {
     query(1,pageSize);
 }); 
 
-async function pageEvent(page)
+async function pageEvent(data)
 {
-    query(page.pageId,page.pageSize);
+    query(data.pageId,data.pageSize);
 }
 
 const query = async (pageId,pageSize)=>

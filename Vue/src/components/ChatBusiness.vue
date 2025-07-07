@@ -9,7 +9,7 @@
             </div>
         </div>
         <div style="height:150px;margin:10px;width:95%;">
-            <div><el-Input type="textarea" v-model="message" rows="4" style="resize:none;" :autocomplete="off"></el-Input></div>
+            <div><el-Input type="textarea" v-model="message" placeholder="请输入问题" rows="4" style="resize:none;" :autocomplete="off"></el-Input></div>
             <div style="float:left;margin-top:10px;">            
             <div>
                   <el-select style="width:90px;margin-right:10px;" @change="DbChange" v-model="props.data.dbInfo.key" :disabled="props.data.isDisabled">
@@ -23,7 +23,7 @@
                           :value="item.value"
                         />
                   </el-select>
-                  <el-select style="width:500px;margin-right:10px;" multiple v-model="props.data.dbInfo.tableName" :disabled="props.data.isDisabled">
+                  <el-select style="width:500px;margin-right:10px;" multiple v-model="props.data.dbInfo.tableName" :disabled="props.data.isDisabled" clearable>
                      <el-option v-for="item in props.data.tableList.list" :value="item.tabName">{{ item.tabName}}({{ item.tabComments }})</el-option>
                   </el-select> 
             </div>

@@ -17,7 +17,8 @@ export const tableClickColor = (id) => {
         });        
     });
     
-    document.querySelector(id + ' tbody tr').click();
+    if(document.querySelector(id + ' tbody tr')!=null)
+        document.querySelector(id + ' tbody tr').click();
 }
 
 export const initPageId = (page) =>

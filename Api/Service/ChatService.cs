@@ -6,6 +6,8 @@ using FastKMSApi.Core.Request;
 using FastOllama.Core;
 using FastOllama.Core.Model;
 using Newtonsoft.Json;
+using ChatModel = FastOllama.Core.Model.ChatModel;
+using McpModel = FastKMSApi.Core.Request.McpModel;
 
 namespace FastKMSApi.Core.Service
 {
@@ -23,10 +25,10 @@ namespace FastKMSApi.Core.Service
         [Autowired]
         private readonly IDataService dataService;
  
-        public string Chat(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null)
+        public string Chat(string message, List<KmsModel> kmsModel, string chatIndex)
         {
             var msg = string.Empty;
-            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = message };
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = message, model = AppSetting.LLmModel };
             var field = new List<float>();
             var lLMResponse = ollamaRepository.Embed(new EmbedModel { content = { message } });
             if (lLMResponse.IsSuccess && lLMResponse.EmbedData.Count > 0)
@@ -50,11 +52,9 @@ namespace FastKMSApi.Core.Service
                 {
                     var content = data.Select(a => a.GetValue("text").ToStr()).ToList();
 
-                    chatRecordModel.isPrompt = true;
                     chatRecordModel.vectorContent = string.Join("\n\r", content);
-                    chatRecordModel.model = AppSetting.LLmModel;
 
-                    var chat = ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = message, model = AppSetting.LLmModel, history = content });
+                    var chat = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel, history = content });
 
                     chatRecordModel.endTime = DateTime.Now;
                     chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
@@ -62,7 +62,6 @@ namespace FastKMSApi.Core.Service
                 }
                 else
                 {
-                    chatRecordModel.model = AppSetting.LLmModel;
                     msg = string.Format(AppSetting.ChatResult, message);
                     chatRecordModel.response = msg;
                 }
@@ -78,7 +77,7 @@ namespace FastKMSApi.Core.Service
             return msg;
         }
 
-        private void AddChatRecord(ChatRecordModel chatRecordModel, string chatIndex, string message, List<KmsModel> kmsModel, DbInfo dbInfo = null)
+        private void AddChatRecord(ChatRecordModel chatRecordModel, string chatIndex, string message, List<KmsModel> kmsModel, List<McpModel> mcpModel = null, DbInfo dbInfo = null)
         {
             var json = JsonConvert.SerializeObject(chatRecordModel).ToStr();
 
@@ -102,10 +101,12 @@ namespace FastKMSApi.Core.Service
                 chatModel.chatIndex = chatIndex;
                 chatModel.name = message;
                 chatModel.kms = kmsModel;
-                chatModel.isNL2Sql = kmsModel.Exists(a => a.isNL2Sql == true);
+                if (kmsModel != null)
+                    chatModel.isNL2Sql = kmsModel.Exists(a => a.isNL2Sql == true);
                 chatModel.total = 1;
                 chatModel.beginTime = DateTime.Now;
                 chatModel.dbInfo = dbInfo;
+                chatModel.mcp = mcpModel;
                 var dic = JsonConvert.SerializeObject(chatModel).ToStr().JsonToDic(true);
                 dic.Remove("beginTime");
                 dic.Add("beginTime", chatModel.beginTime.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -124,41 +125,21 @@ namespace FastKMSApi.Core.Service
             }
         }
 
-        private string Chat(string message, ChatRecordModel kmsChatModel, List<string> history)
-        {
-            var chatData = Chat(message, history);
-            if (chatData.IsSuccess)
-            {
-                kmsChatModel.endTime = DateTime.Now;
-                kmsChatModel.response = chatData.ChatData;
-                return kmsChatModel.response;
-            }
-            else
-            {
-                kmsChatModel.response = chatData.Exception;
-                return kmsChatModel.response;
-            }
-        }
-
         public string NL2Sql(string message, DbInfo dbInfo, string chatIndex)
         {
             var msg = string.Empty;
-            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now };
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, isNL2Sql = true, request = message, model = AppSetting.NL2SqlModel };
             var config = AppSetting.DataConfig.Find(a => a.key == dbInfo.key);
             var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(dbInfo.key, dbInfo.tableName), config.dbType);
 
-            chatRecordModel.isNL2Sql = true;
-            chatRecordModel.request = message;
-            chatRecordModel.model = AppSetting.NL2SqlModel;
+            var chat = ollamaRepository.Chat(new ChatModel { content = template, model = AppSetting.NL2SqlModel });
 
-            var chat = ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = template, model = AppSetting.NL2SqlModel });
-
-            if (chat.ChatData.IndexOf("```sql") >= 0)
+            if (chat.ChatData?.IndexOf("```sql") >= 0)
                 chat.ChatData = chat.ChatData.Substring(chat.ChatData.IndexOf("```sql"), chat.ChatData.Length - chat.ChatData.IndexOf("```sql"));
-            if (chat.ChatData.LastIndexOf("```") >= 0)
+            if (chat.ChatData?.LastIndexOf("```") >= 0)
                 chat.ChatData = chat.ChatData.Substring(0, chat.ChatData.LastIndexOf("```"));
 
-            chat.ChatData = chat.ChatData.Replace("```sql", string.Empty).Replace("```", string.Empty).Replace("\n", " ").Replace(";", string.Empty);
+            chat.ChatData = chat.ChatData?.Replace("```sql", string.Empty).Replace("```", string.Empty).Replace("\n", " ").Replace(";", string.Empty);
             chatRecordModel.vectorContent = chat.ChatData;
             if (chat.IsSuccess)
             {
@@ -173,7 +154,7 @@ namespace FastKMSApi.Core.Service
                         data.Add(JsonConvert.SerializeObject(a));
                     });
 
-                    chat = ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = message, model = AppSetting.LLmModel, history = data });
+                    chat = ollamaRepository.Chat(new ChatModel { content = message, model = AppSetting.LLmModel, history = data });
 
                     chatRecordModel.endTime = DateTime.Now;
                     chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
@@ -192,7 +173,7 @@ namespace FastKMSApi.Core.Service
 
             var kmsModel = new List<KmsModel>();
             kmsModel.Add(new KmsModel { isNL2Sql = true, dateTime = DateTime.Now, name = $"{dbInfo.key}.{string.Join(" ", dbInfo.tableName)}" });
-            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel, dbInfo);
+            AddChatRecord(chatRecordModel, chatIndex, message, kmsModel, null, dbInfo);
 
             return msg;
         }
@@ -205,11 +186,6 @@ namespace FastKMSApi.Core.Service
                 index = $"chat-{index}";
 
             return index;
-        }
-
-        private LLMResponse Chat(string message, List<string> history)
-        {
-            return ollamaRepository.Chat(new FastOllama.Core.Model.ChatModel { content = message, history = history, model = AppSetting.LLmModel });
         }
 
         public PageResult Page(RequestPage page)
@@ -250,12 +226,35 @@ namespace FastKMSApi.Core.Service
             else
                 return result;
         }
+
+        public string Mcp(chatMcpModel model)
+        {
+            var msg = string.Empty;
+            var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, request = model.message, model = AppSetting.LLmModel };
+
+            chatRecordModel.mcpContent = JsonConvert.SerializeObject(model.mcp);             
+
+            var chat = ollamaRepository.Chat(new ChatModel
+            {
+                content = model.message,
+                model = AppSetting.LLmModel,
+                toolsMcp = JsonConvert.DeserializeObject<List<FastOllama.Core.Model.McpModel>>(chatRecordModel.mcpContent)
+            });
+
+            chatRecordModel.endTime = DateTime.Now;
+            chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
+            msg = chatRecordModel.response;
+
+            AddChatRecord(chatRecordModel, model.chatIndex, model.message, null, model.mcp);
+            return msg;
+        }
     }
 
     public interface IChatService
     {
-        string Chat(string message, List<KmsModel> kmsModel, string chatIndex, List<string> history = null);
+        string Chat(string message, List<KmsModel> kmsModel, string chatIndex);
         string NL2Sql(string message, DbInfo dbInfo, string chatIndex);
+        string Mcp(chatMcpModel model);
         PageResult Page(RequestPage page);
         EsResponse GetChatRecord(ChatInfo model);
         EsResponse DeleteChatRecord(Dictionary<string, object> dic, string _id);

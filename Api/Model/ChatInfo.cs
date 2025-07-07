@@ -1,4 +1,5 @@
 ﻿using FastElasticsearch.Core;
+using FastKMSApi.Core.Request;
 using Newtonsoft.Json;
 
 namespace FastKMSApi.Core.Model
@@ -19,6 +20,9 @@ namespace FastKMSApi.Core.Model
 
         [Column(type = "keyword")]
         public bool isNL2Sql { get; set; }
+
+        [Column(type = "keyword")]
+        public List<McpModel> mcp { get; set; } = new List<McpModel>();
 
         [Column(type = "keyword")]
         public DbInfo dbInfo { get; set; } = new DbInfo();

@@ -12,8 +12,8 @@
             <div><el-Input type="textarea" v-model="message" rows="4" placeholder="请输入问题" style="resize:none;" :autocomplete="off"></el-Input></div>
             <div style="float:left;margin-top:10px;">            
             <div> 
-                <el-select style="width:690px;margin-right:10px;" :multiple="true" v-model="props.data.kms" :disabled="props.data.isDisabled" clearable>
-                    <el-option v-for="item in kmsData" :value="item.vectorIndex" :label="item.name"></el-option>
+                <el-select style="width:690px;margin-right:10px;" :multiple="true" v-model="props.data.mcp" :disabled="props.data.isDisabled" clearable>
+                    <el-option v-for="item in mcpData" :value="item._id" :label="item.description"></el-option>
                 </el-select>
             </div>
             </div>
@@ -28,8 +28,8 @@
 <script setup>
 import { ElSelect,ElOption,ElInput,ElMessage,ElLoading } from 'element-plus'
 import { defineProps,defineEmits,ref,onMounted} from 'vue'
-import { kmsList } from '@/api/kmsApi'
-import { chat,chatRecord} from '@/api/chatApi'
+import { mcpPage } from '@/api/mcpApi'
+import { mcp,chatRecord} from '@/api/chatApi'
 const props = defineProps({
     data: {
       type: Object,
@@ -37,11 +37,11 @@ const props = defineProps({
     }
 });
 
-const kmsData = ref([]);
+const mcpData = ref([]);
 const message = ref('');
 
 onMounted(async () => {
-    await kmsList().then(res=>{kmsData.value=res.data});
+    await mcpPage(1,999).then(res=>{mcpData.value=res.data.list});
 }); 
 
 const Close = () =>
@@ -59,25 +59,26 @@ const Send = async () =>
         return;
     }
 
-    if(props.data.kms == undefined || props.data.kms.length == 0)
+    if(props.data.mcp == undefined || props.data.mcp.length == 0)
     {  
-        ElMessage.error("知识库不能为空");
+        ElMessage.error("mcp不能为空");
         return;
     }
 
     let loading = ElLoading.service({ lock: true,  text: 'Loading', background: 'rgba(0, 0, 0, 0.7)' });  
 
     var data = new Object();
-    data.message = message.value;
-    data.kmsModel = [];
-
-    props.data.kms.forEach(item=>{
-        data.kmsModel.push(kmsData.value.find(k=>k.vectorIndex==item));
+    data.mcp = [];
+    props.data.mcp.forEach(element => {
+        let mcp = mcpData.value.find(m=>m._id==element);
+        mcp.parameters = JSON.parse(mcp.parameters);
+        data.mcp.push(mcp);
     });
 
+    data.message = message.value;
     data.chatIndex = props.data.chatIndex;
 
-    await chat(data).then(async res=>{
+    await mcp(data).then(async res=>{
         props.data.chatIndex = res.data.chatIndex;
         await chatRecord(props.data.chatIndex).then(r=>{ props.data.chatRecord = r.data.list;});
         loading.close();

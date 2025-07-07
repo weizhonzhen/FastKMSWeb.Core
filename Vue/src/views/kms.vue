@@ -26,7 +26,7 @@
                 </tr>
             </tbody>
         </table>
-        <page v-model:page="pageData.page" v-model:list="pageData.list"/>
+        <page v-model:data="pageData.page" v-model:list="pageData.list"/>
     </div>
 </section>
 <el-dialog title="增加知识库" v-model="isShow" :close-on-click-modal="false" :close-on-press-escape ="false" :destroy-on-close="true" :before-close="LoadData">
@@ -56,22 +56,17 @@ onMounted(async () => {
     LoadData();
 });   
 
-async function pageEvent(page)
+async function pageEvent(data)
 {
-    await kmsPage(page.pageId,page.pageSize).then(res=>{pageData.value=res.data;});  
+    await kmsPage(data.pageId,data.pageSize).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');
 }
 
 const LoadData = async ()=>
 {
-    try{
     isShow.value = false;
     await kmsPage(1,10).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');
-    }
-    catch{
-        
-    }
 }
 
 const Delete = async (item)=>

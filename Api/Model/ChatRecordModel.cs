@@ -21,13 +21,16 @@ namespace FastKMSApi.Core.Model
         public string vectorContent { get; set; }
 
         [Column(type = "keyword")]
-        public bool isPrompt { get; set; }
-
-        [Column(type = "keyword")]
         public string nL2Sql { get; set; }
 
         [Column(type = "keyword")]
         public bool isNL2Sql { get; set; }
+
+        [Column(type = "keyword")]
+        public string mcpContent {  get; set; }
+
+        [Column(type = "keyword")]
+        public bool isMcp { get; set; }
 
         [Column(type = "keyword")]
         public DateTime endTime { get; set; }

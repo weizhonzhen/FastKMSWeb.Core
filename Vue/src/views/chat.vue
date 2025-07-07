@@ -4,6 +4,7 @@
             <div class="form-group">
                 <button @click="chatKmsWin('知识库')" class="btn btn-primary">对话知识库</button>
                 <button @click="chatBusinessWin('数据库')" class="btn btn-primary">对话数据库</button>
+                <button @click="chatMcpWin('Mcp')" class="btn btn-primary">对话Mcp</button>
             </div>
         </div>
     </div>
@@ -24,7 +25,7 @@
                         <td width="40%">{{ item.name }}</td>
                         <td width="15%">{{ item.total }}</td>
                         <td width="15%">{{ item.beginTime }}</td>
-                        <td width="15%">{{ item.isNL2Sql == 'True' ? "数据库":"知识库" }}</td>
+                        <td width="15%">{{ item.isNL2Sql == 'True' ? "数据库":((item.mcp!=undefined && item.mcp != ''&&JSON.parse(item.mcp).length>0)?"mcp":"知识库") }}</td>
                         <td width="15%">
                            <button class="btn btn-primary btn-sm" @click="Option(item)">查看</button>
                              <button class="btn btn-primary btn-sm" @click="Delete(item)">删除</button>
@@ -32,7 +33,7 @@
                     </tr>
                 </tbody>
             </table>
-            <page v-model:page="pageData.page" v-model:list="pageData.list"/>
+            <page v-model:data="pageData.page" v-model:list="pageData.list"/>
         </div>
     </section>
     <el-dialog :title="showTitle" v-model="isShowChatKms" :close-on-click-modal="false" :destroy-on-close="true" 
@@ -43,6 +44,10 @@
             :close-on-press-escape ="false" :fullscreen="false">
         <chatBusiness :data="propsData" />
     </el-dialog>
+     <el-dialog :title="showTitle" v-model="isShowMcp" :close-on-click-modal="false" :destroy-on-close="true" 
+            :close-on-press-escape ="false" :fullscreen="false">
+        <chatMcp :data="propsData" />
+    </el-dialog>   
 </template>
 <style scoped>
     table tr td{text-align: center;}
@@ -56,6 +61,7 @@ import { tableList,viewList} from '@/api/dataApi'
 import page from '../components/Page.vue'
 import chatKms from '../components/ChatKms.vue'
 import chatBusiness from '../components/ChatBusiness.vue'
+import chatMcp from '../components/ChatMcp.vue'
 import { ElMessage,ElLoading  } from 'element-plus'
 
 const pageData = ref([]);
@@ -63,6 +69,7 @@ const showTitle = ref('');
 const propsData = ref(Object);
 const isShowChatKms = ref(false);
 const isShowBusiness = ref(false);
+const isShowMcp = ref(false);
 
 provide("pageEvent",pageEvent);
 
@@ -70,9 +77,9 @@ onMounted(async () => {
     query();  
 });
 
-async function pageEvent(page)
+async function pageEvent(data)
 {
-    await chatPage(page.pageId,page.pageSize).then(res=>{pageData.value=res.data;});  
+    await chatPage(data.pageId,data.pageSize).then(res=>{pageData.value=res.data;});  
     tableClickColor('#kmsTable');
 }
 
@@ -89,9 +96,23 @@ const chatKmsWin = (title)=>
     data.kms = [];
     data.chatIndex='';
     data.query = query;
-
+    
    propsData.value=data;
    isShowChatKms.value = true;
+   showTitle.value=title;
+}
+
+const chatMcpWin = (title)=>
+{  
+    var data = new Object();
+    data.chatRecord=[];
+    data.isShow = isShowMcp;
+    data.mcp = [];
+    data.chatIndex='';
+    data.query = query;
+    
+   propsData.value=data;
+   isShowMcp.value = true;
    showTitle.value=title;
 }
 
@@ -130,7 +151,10 @@ const Delete = async (item)=>
 }
 
 const Option = async (item)=>
-{
+{        
+    console.log(item);
+    
+    showTitle.value='';
     let data = new Object();
     let pageSize = 999;
     data._id = item._id;
@@ -140,15 +164,28 @@ const Option = async (item)=>
     data.chatIndex = item.chatIndex;
     data.name = item.name;
     data.isDisabled = true;
-
+    data.mcp = [];
+    data.kms =[];
+    
     if (data.chatIndex != '')
         await chatRecord(data.chatIndex).then(res=>{ data.chatRecord = res.data.list;});
 
-    if(item.kms != '')
-        data.kms = JSON.parse(item.kms);
+    if(item.kms != '' && item.mcp != undefined)
+    { 
+        JSON.parse(item.kms).forEach(item=>{ 
+            data.kms.push(item.vectorIndex);
+            showTitle.value += item.name +',';
+         });
+    }    
+    
+    if(item.mcp != '' && item.mcp != undefined)
+    {         
+        JSON.parse(item.mcp).forEach(item=>{             
+            data.mcp.push(item._id);
+            showTitle.value += item.name +',';
+         }); 
+    }  
 
-    Object.entries(data.kms).map(([key,value]) => {showTitle.value = value.name +',';});
-        
     if(item.isNL2Sql == 'True')
     {        
         data.isShow = isShowBusiness;
@@ -158,14 +195,18 @@ const Option = async (item)=>
         else
             await tableList(data.dbInfo.key,1,pageSize).then(res=>{ data.tableList = res.data});
 
-        propsData.value=data;
         isShowBusiness.value = true;
+    }
+    else if(data.mcp.length>0)
+    {
+        data.isShow = isShowMcp;
+        isShowMcp.value = true;
     }
     else
     {
         data.isShow = isShowChatKms;
-        propsData.value=data;
         isShowChatKms.value = true;
     }
+    propsData.value=data;
 }
 </script>

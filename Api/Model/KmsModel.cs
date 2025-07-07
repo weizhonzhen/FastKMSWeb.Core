@@ -6,7 +6,7 @@ namespace FastKMSApi.Core.Model
     public class KmsModel
     {
         [Column(type = "keyword")]
-        public string name {  get; set; }
+        public string? name {  get; set; }
 
         [Column(type = "keyword")]
         public DateTime? dateTime { get; set; } = DateTime.Now;
