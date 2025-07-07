@@ -8,6 +8,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="FastAop.Core" Version="2.5.9" />
+		<PackageReference Include="FastElasticsearch.Core" Version="1.2.3" />
+		<PackageReference Include="FastOllama.Core" Version="1.0.9" />
 		<PackageReference Include="FreeSpire.Presentation" Version="9.3.0" />
 		<PackageReference Include="itext7" Version="9.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
