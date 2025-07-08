@@ -242,7 +242,7 @@ namespace FastKMSApi.Core.Service
             });
 
             chatRecordModel.endTime = DateTime.Now;
-            chatRecordModel.response = chat.IsSuccess ? chat.ChatData : chat.Exception;
+            chatRecordModel.response = chat.IsSuccess ? chat.ToolsData : chat.Exception;
             msg = chatRecordModel.response;
 
             AddChatRecord(chatRecordModel, model.chatIndex, model.message, null, model.mcp);

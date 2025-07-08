@@ -32,7 +32,9 @@ namespace FastKMSApi.Core.Service
         public EsResponse Add(McpModel model)
         {
             var json = JsonConvert.SerializeObject(model).ToStr();
-            return elasticsearch.Add(AppSetting.McpIndex, Guid.NewGuid().ToStr(), json.JsonToDic(true));
+            var dic = json.JsonToDic(true);
+            dic.Remove("_id");
+            return elasticsearch.Add(AppSetting.McpIndex, Guid.NewGuid().ToStr(), dic);
         }
 
         public EsResponse Delete(McpModel model)
