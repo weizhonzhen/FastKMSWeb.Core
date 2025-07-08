@@ -70,9 +70,14 @@ const Send = async () =>
     var data = new Object();
     data.mcp = [];
     props.data.mcp.forEach(element => {
-        let mcp = mcpData.value.find(m=>m._id==element);
+        let mcp = mcpData.value.find(m=>m._id==element);    
+        try{    
         mcp.parameters = JSON.parse(mcp.parameters);
         data.mcp.push(mcp);
+        }
+        catch{
+            data.mcp.push(mcp);
+        }
     });
 
     data.message = message.value;
