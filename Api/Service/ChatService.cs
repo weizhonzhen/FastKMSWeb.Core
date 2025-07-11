@@ -130,6 +130,17 @@ namespace FastKMSApi.Core.Service
             var msg = string.Empty;
             var chatRecordModel = new ChatRecordModel { beginTime = DateTime.Now, isNL2Sql = true, request = message, model = AppSetting.NL2SqlModel };
             var config = AppSetting.DataConfig.Find(a => a.key == dbInfo.key);
+            var selectTable = new List<string>();
+
+            foreach (var tableName in dbInfo.tableName)
+            {
+                var keyWord = dataService.ColumnList(new ColumnModel { key = dbInfo.key, tableName = tableName, isView = dbInfo.isView })
+                     .Select(a => a.colComments.IndexOf(AppSetting.CommentsFilter) > 0 ? a.colComments.Substring(0, a.colComments.IndexOf(AppSetting.CommentsFilter)) : a.colComments).ToList();
+
+                if (keyWord.Exists(k => message.Contains(k)))
+                    selectTable.Add(tableName);
+            }
+
             var template = string.Format(AppSetting.NL2SqlTemplate, message, dataService.TableSql(dbInfo.key, dbInfo.tableName), config.dbType);
 
             var chat = ollamaRepository.Chat(new ChatModel { content = template, model = AppSetting.NL2SqlModel });

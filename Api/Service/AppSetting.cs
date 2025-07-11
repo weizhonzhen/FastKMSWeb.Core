@@ -30,6 +30,8 @@ namespace FastKMSApi.Core.Service
 
         public static readonly JwtModel Jwt = Extension.Config<JwtModel>("Jwt");
 
+        public static readonly string CommentsFilter = "(";
+
         public static ConcurrentDictionary<string, object> User { get; set; } = new ConcurrentDictionary<string, object>();
     }
 }
